@@ -1,0 +1,165 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { Heart, ShoppingBag } from "lucide-react";
+import { useStore } from "@/context/StoreContext";
+
+const bestSellers = [
+  {
+    id: "dress-1",
+    title: "Blossom Hand-Painted Dress",
+    subtitle: "Floral art on premium fabric",
+    originalPrice: "\u20B93,500",
+    price: "\u20B92,500",
+    discount: "28% OFF",
+    image: "/images/bestseller_1.png",
+  },
+  {
+    id: "dress-2",
+    title: "Geometric Rose Gown",
+    subtitle: "Intricate motif detailing",
+    originalPrice: "\u20B94,200",
+    price: "\u20B93,200",
+    discount: "23% OFF",
+    image: "/images/bestseller_2.png",
+  },
+  {
+    id: "dress-3",
+    title: "Pink Blossom Anarkali",
+    subtitle: "Traditional ethnic wear",
+    originalPrice: "\u20B93,800",
+    price: "\u20B92,800",
+    discount: "26% OFF",
+    image: "/images/bestseller_3.png",
+  },
+  {
+    id: "dress-4",
+    title: "Artisan Maxi Dress",
+    subtitle: "Rich artistic motifs",
+    originalPrice: "\u20B93,000",
+    price: "\u20B92,000",
+    discount: "33% OFF",
+    image: "/images/bestseller_4.png",
+  },
+];
+
+export default function BestSellers() {
+  const { addToCart, toggleFavorite, isFavorite } = useStore();
+
+  return (
+    <section id="bestsellers" className="py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-6 lg:px-8">
+        {/* Section header */}
+        <div className="text-center mb-12">
+          <p className="text-xs tracking-[0.35em] uppercase text-[#C9A227] mb-3 font-medium">
+            High Demand
+          </p>
+          <h2
+            className="text-4xl sm:text-5xl font-bold text-[#2B2B2B] mb-3"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
+            Best Sellers
+          </h2>
+          {/* Decorative underline */}
+          <div className="flex items-center justify-center gap-3 mt-4">
+            <div className="h-px w-16 bg-[#E8DCC8]" />
+            <div className="w-2 h-2 rounded-full bg-[#C9A227]" />
+            <div className="h-px w-16 bg-[#E8DCC8]" />
+          </div>
+        </div>
+
+        {/* 4 Items Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {bestSellers.map((item, index) => {
+            const favorited = isFavorite(item.id);
+            return (
+              <article
+                key={item.id}
+                className="group bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] card-hover relative flex flex-col"
+                style={{
+                  boxShadow: "0 2px 12px rgba(201,162,39,0.06)",
+                  animationDelay: `${index * 0.08}s`,
+                }}
+              >
+                {/* Image */}
+                <div className="relative h-[320px] overflow-hidden">
+                  <Image
+                    src={item.image}
+                    alt={item.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {/* Discount badge */}
+                  <span
+                    className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-[#2B2B2B] tracking-wide z-10"
+                    style={{ background: "linear-gradient(135deg, #F0D97A, #C9A227)" }}
+                  >
+                    {item.discount}
+                  </span>
+                  
+                  {/* Favorite Button */}
+                  <button
+                    onClick={() => toggleFavorite(item)}
+                    className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-sm z-10 transition-transform hover:scale-110"
+                  >
+                    <Heart 
+                      size={16} 
+                      className={favorited ? "fill-[#C9A227] text-[#C9A227]" : "text-[#8A8070]"} 
+                    />
+                  </button>
+                </div>
+
+                {/* Card body */}
+                <div className="p-5 flex-grow flex flex-col justify-between">
+                  <div>
+                    <h3
+                      className="text-lg font-bold text-[#2B2B2B] mb-1 leading-tight"
+                      style={{ fontFamily: "'Playfair Display', serif" }}
+                    >
+                      {item.title}
+                    </h3>
+                    <p className="text-xs text-[#8A8070] mb-4">{item.subtitle}</p>
+                  </div>
+
+                  <div className="flex flex-col mt-auto gap-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-[#8A8070] line-through decoration-[#8A8070]/60">
+                        {item.originalPrice}
+                      </span>
+                      <span
+                        className="text-xl font-bold text-[#C9A227]"
+                        style={{ fontFamily: "'Playfair Display', serif" }}
+                      >
+                        {item.price}
+                      </span>
+                    </div>
+                    
+                    <button
+                      onClick={() => addToCart(item)}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold text-[#2B2B2B] transition-all duration-300 transform active:scale-[0.98] opacity-90 hover:opacity-100"
+                      style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
+                    >
+                      <ShoppingBag size={14} /> Add to Cart
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {/* View all CTA */}
+        <div className="text-center mt-12">
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-[#2B2B2B] font-semibold text-sm tracking-wide shadow-gold transition-all duration-300 hover:opacity-90 hover:scale-105"
+            style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
+          >
+            View All Collections
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
