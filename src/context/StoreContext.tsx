@@ -25,6 +25,7 @@ type StoreContextType = {
   isFavorite: (productId: string) => boolean;
   cartTotal: number;
   cartCount: number;
+  clearCart: () => void;
 };
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -69,6 +70,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity < 1) return;
     setCart((prevCart) =>
@@ -110,6 +115,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         isFavorite,
         cartTotal,
         cartCount,
+        clearCart,
       }}
     >
       {children}

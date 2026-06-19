@@ -146,12 +146,13 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <button
+                <Link
+                  href="/checkout"
                   className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-[#2B2B2B] font-bold shadow-gold hover:opacity-90 transition-all duration-300 transform active:scale-[0.98]"
                   style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
                 >
                   Proceed to Checkout <ArrowRight size={18} />
-                </button>
+                </Link>
 
                 <div className="mt-6 text-center">
                   <p className="text-xs text-[#8A8070] flex items-center justify-center gap-1.5">
