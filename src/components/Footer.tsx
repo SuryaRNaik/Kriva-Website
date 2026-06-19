@@ -127,7 +127,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="pt-6 border-t border-[#E8DCC8] text-center">
           <p className="text-xs text-[#aaa]">
-            © {year} Kriva Art Studio. All rights reserved.
+            © {year} Kriva Arts Studio. All rights reserved.
           </p>
         </div>
       </div>
