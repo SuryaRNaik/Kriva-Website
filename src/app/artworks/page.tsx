@@ -105,7 +105,7 @@ const ALL_PRODUCTS = [
     subtitle: "Traditional motifs on handwoven cotton",
     category: "Fabric Art",
     image: "/images/art_fabric.png",
-    price: 2500,
+    price: 5,
     originalPrice: null,
     rating: 4.7,
     soldOut: false,

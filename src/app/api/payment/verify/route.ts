@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { sendEmail, getWorkshopConfirmationEmailHtml } from "@/lib/email";
+import { sendEmail, getWorkshopConfirmationEmailHtml, getShopCustomerEmailHtml, getShopOwnerEmailHtml } from "@/lib/email";
 import type { VerifyPaymentPayload, VerifyPaymentResponse } from "@/types/payment";
 
 export async function POST(req: Request) {
@@ -71,6 +71,44 @@ export async function POST(req: Request) {
         subject: "Booking Confirmed: Tanjore Painting Workshop - Kriva Studio",
         html: emailHtml,
       }).catch(err => console.error("Failed to send workshop confirmation email", err));
+    } else {
+      // It's a standard Shop order
+      const formattedAddress = `${customerDetails.address}, ${customerDetails.city} - ${customerDetails.pincode}`;
+      
+      const customerHtml = getShopCustomerEmailHtml(
+        customerDetails.name,
+        items.map(item => ({ title: item.title, quantity: item.quantity, price: item.price })),
+        totalAmount,
+        internalOrderId,
+        formattedAddress
+      );
+
+      const ownerHtml = getShopOwnerEmailHtml(
+        customerDetails.name,
+        customerDetails.email,
+        customerDetails.phone,
+        formattedAddress,
+        items.map(item => ({ title: item.title, quantity: item.quantity, price: item.price })),
+        totalAmount,
+        internalOrderId
+      );
+
+      // Send to Customer
+      sendEmail({
+        to: customerDetails.email,
+        subject: "Order Confirmed: Your handcrafted piece from Kriva Studio",
+        html: customerHtml,
+      }).catch(err => console.error("Failed to send shop customer email", err));
+
+      // Send to Owner
+      const ownerEmail = process.env.SMTP_EMAIL;
+      if (ownerEmail) {
+        sendEmail({
+          to: ownerEmail,
+          subject: `New Order Alert: #${internalOrderId}`,
+          html: ownerHtml,
+        }).catch(err => console.error("Failed to send shop owner email", err));
+      }
     }
 
     const responseData: VerifyPaymentResponse = {
