@@ -37,7 +37,7 @@ export default function Navbar() {
       <header
         id="navbar"
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400 ${
-          isScrolled ? "navbar-scrolled py-2" : "py-3 bg-[#FAF8F2]/95 shadow-sm"
+          isScrolled ? "navbar-scrolled py-2" : "py-3 bg-[#FCF4F5]/95 shadow-sm"
         }`}
       >
         <nav className="max-w-6xl mx-auto px-6 lg:px-8 flex items-center justify-between">
@@ -45,7 +45,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" id="nav-logo" className="flex items-center gap-2">
             <Image
-              src="/images/logo.jpg"
+              src="/images/krivanewlogo.png"
               alt="Kriva Studio by Ruchitha Reddy"
               width={56}
               height={56}
@@ -132,7 +132,7 @@ export default function Navbar() {
         className={`fixed inset-0 z-40 md:hidden transition-all duration-400 ${
           menuOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
-        style={{ background: "rgba(250,248,242,0.98)", backdropFilter: "blur(12px)" }}
+        style={{ background: "rgba(252,244,245,0.98)", backdropFilter: "blur(12px)" }}
       >
         {/* Top accent */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#D4AF37] via-[#C9A227] to-[#A07830]" />

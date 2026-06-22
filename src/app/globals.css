@@ -23,13 +23,13 @@
   /* Neutrals */
   --kriva-white:        #FFFFFF;
   --kriva-off-white:    #FAFAF8;
-  --kriva-cream:        #FAF8F2;
-  --kriva-warm-cream:   #F5F0E6;
-  --kriva-gray:         #8A8070;
-  --kriva-gray-light:   #F5F3EF;
-  --kriva-text:         #2B2B2B;
-  --kriva-text-soft:    #5A5548;
-  --kriva-border:       #E8DCC8;
+  --kriva-cream:        #FCF4F5;
+  --kriva-warm-cream:   #F5E6E8;
+  --kriva-gray:         #7A6A6D;
+  --kriva-gray-light:   #F7EBED;
+  --kriva-text:         #3B2A2C;
+  --kriva-text-soft:    #5E4A4D;
+  --kriva-border:       #E8D3D6;
 
   /* Shadcn vars – light mode */
   --background:          oklch(0.985 0.005 85);
@@ -117,10 +117,10 @@
   --color-kriva-champagne:   #D4AF37;
   --color-kriva-champagne-dark: #8B7320;
   --color-kriva-white:       #FFFFFF;
-  --color-kriva-cream:       #FAF8F2;
-  --color-kriva-text:        #2B2B2B;
-  --color-kriva-text-soft:   #5A5548;
-  --color-kriva-border:      #E8DCC8;
+  --color-kriva-cream:       #FCF4F5;
+  --color-kriva-text:        #3B2A2C;
+  --color-kriva-text-soft:   #5E4A4D;
+  --color-kriva-border:      #E8D3D6;
 }
 
 /* ── Base ── */
@@ -150,14 +150,14 @@
     font-family: "Dancing Script", cursive;
   }
 
-  /* Luxury ivory hero background */
+  /* Luxury ivory hero background -> Pastel blush background */
   .bg-hero-ivory {
-    background: linear-gradient(160deg, #FAF8F2 0%, #F5F0E6 40%, #FAF8F2 70%, #FFFDF8 100%);
+    background: linear-gradient(160deg, #FCF4F5 0%, #F5E6E8 40%, #FCF4F5 70%, #FFFDF8 100%);
   }
 
-  /* Deep charcoal workshops section */
+  /* Deep charcoal workshops section -> Deep maroon */
   .bg-workshop-dark {
-    background: linear-gradient(160deg, #1A1A2E 0%, #16213E 40%, #0F0F1A 100%);
+    background: linear-gradient(160deg, #4A252B 0%, #381B20 40%, #241114 100%);
   }
 
   /* Gold text gradient */
@@ -242,7 +242,7 @@
 
 /* ── Navbar scroll state ── */
 .navbar-scrolled {
-  background: rgba(250, 248, 242, 0.97) !important;
+  background: rgba(252, 244, 245, 0.97) !important;
   backdrop-filter: blur(16px);
   box-shadow: 0 1px 0 rgba(201, 162, 39, 0.12);
 }
