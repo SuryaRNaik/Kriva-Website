@@ -180,12 +180,12 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-[#FCF4F5]">
       {/* ── Hero Strip ── */}
       <div
-        className="relative pt-32 pb-12 px-6 overflow-hidden"
+        className="relative pt-24 pb-8 px-6 overflow-hidden"
         style={{ background: "linear-gradient(160deg,#FCF4F5 0%,#F5E6E8 60%,#FCF4F5 100%)" }}
       >
         <div className="max-w-6xl mx-auto">
-          <div className="mb-5"><BackButton /></div>
-          <p className="text-xs text-[#7A6A6D] mb-4">
+          <div className="mb-3"><BackButton /></div>
+          <p className="text-xs text-[#7A6A6D] mb-3">
             <Link href="/" className="hover:text-[#C9A227] transition-colors">Home</Link>
             <span className="mx-2 text-[#E8D3D6]">›</span>
             <span className="text-[#C9A227]">Shop</span>
@@ -228,8 +228,23 @@ export default function CategoryPage() {
       <div className="sticky top-[64px] z-30 bg-white/95 border-b border-[#E8D3D6]"
         style={{ backdropFilter: "blur(12px)" }}>
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
-          <div className="text-xs font-semibold text-[#3B2A2C]">
-            All {categoryTitle}
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+            {Object.entries(CATEGORY_TITLES).map(([slug, title]) => (
+              <Link
+                key={slug}
+                href={`/shop/${slug}`}
+                className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 ${
+                  categorySlug === slug
+                    ? "text-[#3B2A2C]"
+                    : "text-[#7A6A6D] bg-transparent hover:text-[#C9A227]"
+                }`}
+                style={categorySlug === slug
+                  ? { background: "linear-gradient(135deg,#F0D97A 0%,#C9A227 50%,#A07830 100%)" }
+                  : {}}
+              >
+                {title}
+              </Link>
+            ))}
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <span className="text-xs text-[#7A6A6D] hidden sm:block">

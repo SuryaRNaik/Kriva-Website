@@ -43,7 +43,17 @@ export default function Navbar() {
         <nav className="max-w-6xl mx-auto px-6 lg:px-8 flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" id="nav-logo" className="flex items-center gap-2">
+          <Link 
+            href="/" 
+            id="nav-logo" 
+            className="flex items-center gap-2"
+            onClick={(e) => {
+              if (window.location.pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
+          >
             <Image
               src="/images/krivanewlogo.png"
               alt="Kriva Studio by Ruchitha Reddy"
