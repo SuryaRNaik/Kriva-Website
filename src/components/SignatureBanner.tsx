@@ -20,17 +20,17 @@ export default function SignatureBanner() {
       {/* Outer wrapper — hard flex split, clean dividing line */}
       <div className="flex flex-col lg:flex-row" style={{ borderTop: "1px solid #E8DCC8", borderBottom: "1px solid #E8DCC8" }}>
 
-        {/* ── Left: photo panel — white bg, image at natural ratio ── */}
+        {/* ── Left: photo panel ── */}
         <div
-          className="w-full lg:w-1/2 flex items-center justify-center bg-white py-10 lg:py-12"
-          style={{ borderRight: "2px solid #C9A227" }}
+          className="w-full lg:w-1/2 flex items-center justify-center py-10 lg:py-12"
+          style={{ borderRight: "2px solid #C9A227", backgroundColor: "#FCF4F5" }}
         >
           <div className="relative w-full max-w-[360px] mx-auto px-6 lg:px-10">
             <Image
-              src="/images/lehenga.png"
-              alt="Hand-painted orange tulip lehenga — Kriva Studio signature piece by Ruchitha Reddy"
-              width={540}
-              height={720}
+              src="/images/peacock_fabric.png"
+              alt="White aesthetic fabric with a beautiful hand-painted peacock"
+              width={800}
+              height={800}
               quality={95}
               className="w-full h-auto rounded-xl shadow-md"
               style={{ objectFit: "contain" }}
@@ -43,7 +43,7 @@ export default function SignatureBanner() {
         <div
           id="signature-banner-content"
           className="w-full lg:w-1/2 flex items-center justify-center px-10 py-14"
-          style={{ background: "#2B2B2B" }}
+          style={{ background: "linear-gradient(160deg, #4A252B 0%, #381B20 40%, #241114 100%)" }}
         >
           {/* Decorative corner frame */}
           <div

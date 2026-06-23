@@ -105,7 +105,7 @@ const ALL_PRODUCTS = [
     subtitle: "Traditional motifs on handwoven cotton",
     category: "Fabric Art",
     image: "/images/art_fabric.png",
-    price: 2500,
+    price: 5,
     originalPrice: null,
     rating: 4.7,
     soldOut: false,
@@ -347,7 +347,7 @@ export default function ArtworksPage() {
 
       {/* ── Hero Strip ───────────────────────────────────────── */}
       <div
-        className="relative pt-32 pb-12 px-6 overflow-hidden"
+        className="relative pt-24 pb-8 px-6 overflow-hidden"
         style={{ background: "linear-gradient(160deg,#FAF8F2 0%,#F5F0E6 60%,#FAF8F2 100%)" }}
       >
         {/* Ambient glow */}
@@ -355,9 +355,9 @@ export default function ArtworksPage() {
           style={{ background: "radial-gradient(ellipse at top right,rgba(201,162,39,0.07) 0%,transparent 70%)", transform: "translate(30%,-30%)" }} />
 
         <div className="max-w-6xl mx-auto">
-          <div className="mb-5"><BackButton /></div>
+          <div className="mb-3"><BackButton /></div>
           {/* Breadcrumb */}
-          <p className="text-xs text-[#8A8070] mb-4">
+          <p className="text-xs text-[#8A8070] mb-3">
             <Link href="/" className="hover:text-[#C9A227] transition-colors">Home</Link>
             <span className="mx-2 text-[#E8DCC8]">›</span>
             <span className="text-[#C9A227]">Collections</span>

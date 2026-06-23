@@ -1,39 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Script from "next/script";
 import BackButton from "@/components/BackButton";
+import type { CustomerDetails, RazorpayOptions, CreateOrderResponse } from "@/types/payment";
 
 // ─────────────────────────────────────────────────────────────
 // UPCOMING WORKSHOPS — Edit this array to add/remove workshops.
 // To show a workshop: add an object to the array below.
 // To hide all workshops (Coming Soon mode): leave the array empty → []
-//
-// Example workshop object:
-// {
-//   id: "tw-jan-2025",
-//   title: "Tanjore Painting — Beginner Batch",
-//   date: "Saturday, 25 January 2025",
-//   time: "10:00 AM – 1:00 PM",
-//   duration: "3 hours",
-//   location: "Bengaluru Studio",
-//   price: "₹1,200",
-//   seatsLeft: 6,
-//   totalSeats: 12,
-//   description: "Learn the basics of traditional Tanjore painting — gold foil application, gesso work, and iconic deity motifs.",
-// }
 // ─────────────────────────────────────────────────────────────
-const UPCOMING_WORKSHOPS: {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  duration: string;
-  location: string;
-  price: string;
-  seatsLeft: number;
-  totalSeats: number;
-  description: string;
-}[] = [];
+const UPCOMING_WORKSHOPS = [
+  {
+    id: "tw-jan-2025",
+    title: "Tanjore Painting — Beginner Batch",
+    date: "Saturday, 25 January 2025",
+    time: "10:00 AM – 1:00 PM",
+    duration: "3 hours",
+    location: "Bengaluru Studio",
+    price: "₹5",
+    numericPrice: 5,
+    seatsLeft: 6,
+    totalSeats: 12,
+    description: "Learn the basics of traditional Tanjore painting — gold foil application, gesso work, and iconic deity motifs.",
+  }
+];
 // ─────────────────────────────────────────────────────────────
 
 const TESTIMONIALS = [
@@ -42,24 +34,21 @@ const TESTIMONIALS = [
     city: "Bengaluru",
     initials: "PM",
     rating: 5,
-    quote:
-      "Really enjoyed the session. Ruchitha explains everything clearly and the pace was perfect for a beginner like me.",
+    quote: "Really enjoyed the session. Ruchitha explains everything clearly and the pace was perfect for a beginner like me.",
   },
   {
     name: "Ananya R.",
     city: "Chennai",
     initials: "AR",
     rating: 5,
-    quote:
-      "The Tanjore workshop was a great experience. Came home with a painting I'm actually proud of.",
+    quote: "The Tanjore workshop was a great experience. Came home with a painting I'm actually proud of.",
   },
   {
     name: "Kavitha S.",
     city: "Hyderabad",
     initials: "KS",
     rating: 5,
-    quote:
-      "Lovely atmosphere, very patient instructor. Would definitely attend another one.",
+    quote: "Lovely atmosphere, very patient instructor. Would definitely attend another one.",
   },
 ];
 
@@ -101,24 +90,43 @@ const FAQS = [
   },
   {
     q: "How do I confirm my seat and pay?",
-    a: "Fill the interest form below. We'll email you with batch details and payment instructions within 24 hours.",
+    a: "Select your batch below and pay securely via Razorpay. You will immediately receive a confirmation email with venue details.",
   },
 ];
 
 export default function WorkshopsPage() {
+  const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  
+  // For booking
+  const [selectedWorkshopId, setSelectedWorkshopId] = useState<string>(UPCOMING_WORKSHOPS[0]?.id || "");
+  const [customer, setCustomer] = useState<CustomerDetails>({
+    name: "",
+    email: "",
+    phone: "",
+    address: "Workshop Booking", // Default dummy address for workshop
+    city: "",
+    pincode: "",
+  });
 
   const hasWorkshops = UPCOMING_WORKSHOPS.length > 0;
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCustomer((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Waitlist Submit (When NO workshops available)
+  const handleWaitlistSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.append("access_key", "0b8ee4b0-c31a-494e-8011-41a8077b8cc4");
-    formData.append("subject", "Kriva Studio — Workshop Waitlist Registration");
+    formData.append("subject", "Kriva Studio — Workshop Waitlist");
     try {
       const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
@@ -138,8 +146,126 @@ export default function WorkshopsPage() {
     }
   };
 
+  // Payment Submit (When workshops ARE available)
+  const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!isScriptLoaded) {
+      alert("Payment gateway is still loading. Please wait a moment.");
+      return;
+    }
+
+    const workshop = UPCOMING_WORKSHOPS.find(w => w.id === selectedWorkshopId);
+    if (!workshop) return;
+
+    setSubmitting(true);
+
+    try {
+      // 1. Create order on backend
+      const amountInPaise = workshop.numericPrice * 100;
+      
+      const createOrderRes = await fetch("/api/payment/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: "INR",
+          receipt: `ws_${Date.now()}`,
+          notes: {
+            customer_name: customer.name,
+            customer_email: customer.email,
+            workshop_id: workshop.id,
+          },
+        }),
+      });
+
+      const orderData: CreateOrderResponse = await createOrderRes.json();
+
+      if (!createOrderRes.ok) {
+        throw new Error((orderData as any).error || "Failed to create order");
+      }
+
+      // 2. Initialize Razorpay Checkout
+      const options: RazorpayOptions = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Kriva Studio",
+        description: `Booking: ${workshop.title}`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: customer.name,
+          email: customer.email,
+          contact: customer.phone,
+        },
+        theme: { color: "#C9A227" },
+        handler: async function (response) {
+          try {
+            // 3. Verify payment on backend
+            const verifyRes = await fetch("/api/payment/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                customerDetails: customer,
+                items: [],
+                totalAmount: workshop.numericPrice,
+                orderType: "workshop",
+                workshopDetails: {
+                  title: workshop.title,
+                  date: workshop.date,
+                  time: workshop.time,
+                  location: workshop.location,
+                }
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              localStorage.setItem("kriva_workshop_order", JSON.stringify({
+                orderId: verifyData.orderId,
+                amount: workshop.numericPrice,
+                email: customer.email
+              }));
+              router.push("/workshops/success");
+            } else {
+              router.push("/failure");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            router.push("/failure");
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitting(false);
+          },
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function () {
+        setSubmitting(false);
+        router.push("/failure");
+      });
+      rzp.open();
+
+    } catch (error: any) {
+      console.error("Payment initiation error:", error);
+      alert(error.message || "Failed to initiate payment. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF8F2]">
+      <Script 
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        onLoad={() => setIsScriptLoaded(true)}
+      />
 
       {/* ── Hero Banner ── */}
       <div
@@ -148,16 +274,13 @@ export default function WorkshopsPage() {
           background: "linear-gradient(160deg, #FAF8F2 0%, #F5F0E6 50%, #FAF8F2 100%)",
         }}
       >
-        {/* Back button — top left */}
         <div className="absolute top-24 left-6 z-10">
           <BackButton />
         </div>
-        {/* Decorative mandala bg */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
           style={{ background: "radial-gradient(ellipse, rgba(201,162,39,0.06) 0%, transparent 70%)" }}
         />
-        {/* Top gold line */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#C9A227]" />
           <div className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" />
@@ -218,7 +341,6 @@ export default function WorkshopsPage() {
                       <span>⏱ {ws.duration}</span>
                       <span>📍 {ws.location}</span>
                     </div>
-                    {/* Seats bar */}
                     <div>
                       <div className="flex justify-between text-xs text-[#8A8070] mb-1">
                         <span>{almostFull ? `⚡ Only ${ws.seatsLeft} seats left!` : `${ws.seatsLeft} of ${ws.totalSeats} seats available`}</span>
@@ -227,20 +349,20 @@ export default function WorkshopsPage() {
                       <div className="h-1.5 bg-[#F5F0E6] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: "linear-gradient(90deg, #F0D97A, #C9A227)",
-                          }}
+                          style={{ width: `${pct}%`, background: "linear-gradient(90deg, #F0D97A, #C9A227)" }}
                         />
                       </div>
                     </div>
-                    <a
-                      href="#waitlist-form"
+                    <button
+                      onClick={() => {
+                        setSelectedWorkshopId(ws.id);
+                        document.getElementById("waitlist-form")?.scrollIntoView({ behavior: "smooth" });
+                      }}
                       className="mt-2 inline-flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-[#2B2B2B] transition-all hover:opacity-90 hover:scale-[1.02]"
                       style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
                     >
-                      Register for This Batch →
-                    </a>
+                      Book This Batch →
+                    </button>
                   </div>
                 );
               })}
@@ -253,19 +375,13 @@ export default function WorkshopsPage() {
               className="px-10 py-14 text-center relative"
               style={{ background: "linear-gradient(160deg, #2B2B2B 0%, #1A1A2E 100%)" }}
             >
-              {/* Gold mandala decoration */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.06]">
                 <svg viewBox="0 0 300 300" width="300" height="300" fill="none">
                   {[30, 60, 90, 120, 140].map((r) => (
                     <circle key={r} cx="150" cy="150" r={r} stroke="#C9A227" strokeWidth="0.8" strokeDasharray="3 5" />
                   ))}
-                  {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => {
-                    const rad = (a * Math.PI) / 180;
-                    return <line key={a} x1={150 + 30 * Math.cos(rad)} y1={150 + 30 * Math.sin(rad)} x2={150 + 140 * Math.cos(rad)} y2={150 + 140 * Math.sin(rad)} stroke="#D4AF37" strokeWidth="0.4" />;
-                  })}
                 </svg>
               </div>
-
               <p className="text-[11px] tracking-[0.35em] uppercase text-[#C9A227] font-medium mb-5 relative z-10">
                 Coming Soon
               </p>
@@ -278,11 +394,6 @@ export default function WorkshopsPage() {
               <p className="text-white/65 text-sm sm:text-base max-w-md mx-auto leading-relaxed relative z-10">
                 We run Tanjore painting workshops regularly in small batches. Fill in the form below and you'll be the first to know when the next one is announced.
               </p>
-              <div className="mt-6 flex items-center justify-center gap-6 text-xs text-white/50 relative z-10">
-                <span>✦ Small batches</span>
-                <span>✦ All materials included</span>
-                <span>✦ Beginner friendly</span>
-              </div>
             </div>
           </div>
         )}
@@ -324,23 +435,25 @@ export default function WorkshopsPage() {
         </div>
       </section>
 
-      {/* ── Waitlist Form ── */}
+      {/* ── Form (Booking or Waitlist) ── */}
       <section id="waitlist-form" className="py-16 bg-[#FAF8F2]">
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-10">
-            <p className="text-xs tracking-[0.3em] uppercase text-[#C9A227] mb-2 font-medium">Stay Updated</p>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#C9A227] mb-2 font-medium">
+              {hasWorkshops ? "Secure Your Seat" : "Stay Updated"}
+            </p>
             <h2 className="text-3xl font-bold text-[#2B2B2B] mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-              {hasWorkshops ? "Register Your Interest" : "Join the Waitlist"}
+              {hasWorkshops ? "Book Your Workshop" : "Join the Waitlist"}
             </h2>
             <p className="text-sm text-[#8A8070]">
               {hasWorkshops
-                ? "Fill in your details and we'll confirm your seat within 24 hours."
+                ? "Enter your details and pay securely. An instant confirmation email will be sent to you."
                 : "We'll notify you first when the next Tanjore workshop is announced."}
             </p>
           </div>
 
           <div className="bg-white rounded-2xl border border-[#E8DCC8] shadow-sm p-8">
-            {submitted ? (
+            {submitted && !hasWorkshops ? (
               <div className="text-center py-10">
                 <div
                   className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
@@ -357,17 +470,33 @@ export default function WorkshopsPage() {
                   You&apos;re on the list!
                 </h3>
                 <p className="text-sm text-[#8A8070] max-w-sm mx-auto">
-                  We&apos;ll email you as soon as the next Tanjore painting workshop is announced. Thank you for your interest!
+                  We&apos;ll email you as soon as the next Tanjore painting workshop is announced.
                 </p>
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-8 px-6 py-2.5 rounded-full border border-[#C9A227] text-[#C9A227] text-sm font-medium hover:bg-[#F5F0E6] transition-colors"
-                >
-                  Submit another response
-                </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <form onSubmit={hasWorkshops ? handlePaymentSubmit : handleWaitlistSubmit} className="flex flex-col gap-5">
+                
+                {hasWorkshops && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
+                      Select Batch *
+                    </label>
+                    <select
+                      name="workshopId"
+                      required
+                      value={selectedWorkshopId}
+                      onChange={(e) => setSelectedWorkshopId(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] bg-white transition-all"
+                    >
+                      {UPCOMING_WORKSHOPS.map(ws => (
+                        <option key={ws.id} value={ws.id}>
+                          {ws.title} — {ws.date} ({ws.price})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
@@ -378,6 +507,8 @@ export default function WorkshopsPage() {
                       name="name"
                       placeholder="Your name"
                       required
+                      value={customer.name}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] transition-all"
                     />
                   </div>
@@ -390,6 +521,8 @@ export default function WorkshopsPage() {
                       name="email"
                       placeholder="you@example.com"
                       required
+                      value={customer.email}
+                      onChange={handleInputChange}
                       className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] transition-all"
                     />
                   </div>
@@ -397,58 +530,56 @@ export default function WorkshopsPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
-                    Phone Number <span className="text-[#aaa] font-normal normal-case">(optional)</span>
+                    Phone Number {hasWorkshops ? "*" : <span className="text-[#aaa] font-normal normal-case">(optional)</span>}
                   </label>
                   <input
                     type="tel"
                     name="phone"
+                    required={hasWorkshops}
                     placeholder="+91 98765 43210"
+                    value={customer.phone}
+                    onChange={handleInputChange}
                     className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] transition-all"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
-                    Preferred Schedule *
-                  </label>
-                  <select
-                    name="preferred_schedule"
-                    required
-                    defaultValue=""
-                    className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] bg-white transition-all"
-                  >
-                    <option value="" disabled>Select your preference…</option>
-                    <option value="Weekends">Weekends</option>
-                    <option value="Weekday Evenings">Weekday Evenings</option>
-                    <option value="No Preference">No Preference</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
-                    Anything to share? <span className="text-[#aaa] font-normal normal-case">(optional)</span>
-                  </label>
-                  <textarea
-                    name="message"
-                    rows={3}
-                    placeholder="E.g. I've never painted before… or I'm gifting this to someone…"
-                    className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] resize-none transition-all"
-                  />
-                </div>
+                {!hasWorkshops && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#444] uppercase tracking-wide mb-2">
+                      Preferred Schedule *
+                    </label>
+                    <select
+                      name="preferred_schedule"
+                      required
+                      defaultValue=""
+                      className="w-full px-4 py-3 rounded-xl border border-[#E0E0E0] focus:border-[#C9A227] focus:ring-1 focus:ring-[#C9A227] outline-none text-sm text-[#2B2B2B] bg-white transition-all"
+                    >
+                      <option value="" disabled>Select your preference…</option>
+                      <option value="Weekends">Weekends</option>
+                      <option value="Weekday Evenings">Weekday Evenings</option>
+                      <option value="No Preference">No Preference</option>
+                    </select>
+                  </div>
+                )}
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="py-4 rounded-xl text-[#2B2B2B] font-bold text-sm tracking-wide transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.98]"
+                  className="mt-2 py-4 rounded-xl text-[#2B2B2B] font-bold text-sm tracking-wide transition-all hover:opacity-90 hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2"
                   style={{
                     background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)",
                     opacity: submitting ? 0.7 : 1,
                   }}
                 >
-                  {submitting ? "Submitting…" : "Notify Me When a Workshop Opens →"}
+                  {submitting 
+                    ? "Processing..." 
+                    : hasWorkshops 
+                      ? `Pay ${UPCOMING_WORKSHOPS.find(w => w.id === selectedWorkshopId)?.price || ""} via Razorpay` 
+                      : "Notify Me When a Workshop Opens →"
+                  }
                 </button>
                 <p className="text-center text-xs text-[#aaa]">
-                  Your details are sent securely to the studio and will never be shared.
+                  {hasWorkshops ? "Secure payments handled by Razorpay. An email receipt will be sent automatically." : "Your details are sent securely to the studio and will never be shared."}
                 </p>
               </form>
             )}
