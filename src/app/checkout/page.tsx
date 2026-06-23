@@ -97,6 +97,7 @@ export default function CheckoutPage() {
                 customerDetails: customer,
                 items: cart,
                 totalAmount: cartTotal,
+                orderType: "shop",
               }),
             });
 
