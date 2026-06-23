@@ -139,7 +139,6 @@ export async function POST(req: Request) {
         subject: "Booking Confirmed: Tanjore Painting Workshop - Kriva Studio",
         html: emailHtml,
       }).catch(err => console.error("Failed to send workshop confirmation email", err));
-      
       // Notify owner
       if (process.env.SMTP_EMAIL) {
         sendEmail({
