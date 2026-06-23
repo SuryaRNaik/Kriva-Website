@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { sendEmail, getWorkshopConfirmationEmailHtml, getShopCustomerEmailHtml, getShopOwnerEmailHtml } from "@/lib/email";
+import { razorpay } from "@/lib/razorpay";
+import { 
+  sendEmail, 
+  getWorkshopConfirmationEmailHtml,
+  getOwnerOrderNotificationHtml,
+  getCustomerOrderConfirmationHtml
+} from "@/lib/email";
 import type { VerifyPaymentPayload, VerifyPaymentResponse } from "@/types/payment";
+import connectDB from "@/lib/db";
+import Customer from "@/models/Customer";
+import Order from "@/models/Order";
+import WorkshopRegistration from "@/models/WorkshopRegistration";
 
 export async function POST(req: Request) {
   try {
@@ -47,13 +57,73 @@ export async function POST(req: Request) {
     }
 
     // Payment is verified!
-    // In a real application, you would save the order to your database here.
-    // For now, we will just return success and let the client handle it.
     
+    // Force Capture the payment so funds settle to the bank account immediately
+    try {
+      await razorpay.payments.capture(razorpay_payment_id, totalAmount * 100, "INR");
+    } catch (captureError) {
+      console.error("Payment capture failed or was already captured:", captureError);
+    }
+
     // Generate a pseudo-random internal order ID
     const internalOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // If it's a workshop booking, send the confirmation email
+    // Database Integration
+    try {
+      await connectDB();
+
+      // Find or create customer
+      let customer = await Customer.findOne({ email: customerDetails.email });
+      if (!customer) {
+        customer = await Customer.create({
+          name: customerDetails.name,
+          email: customerDetails.email,
+          phone: customerDetails.phone,
+          address: customerDetails.address,
+          city: customerDetails.city,
+          pincode: customerDetails.pincode,
+        });
+      } else {
+        // Optionally update address if it changed
+        customer.address = customerDetails.address;
+        customer.city = customerDetails.city;
+        customer.pincode = customerDetails.pincode;
+        customer.phone = customerDetails.phone;
+        await customer.save();
+      }
+
+      if (orderType === "workshop" && workshopDetails) {
+        await WorkshopRegistration.create({
+          orderId: internalOrderId,
+          customerName: customerDetails.name,
+          email: customerDetails.email,
+          phone: customerDetails.phone,
+          workshopTitle: workshopDetails.title,
+          date: workshopDetails.date,
+          time: workshopDetails.time,
+          location: workshopDetails.location,
+          amountPaid: totalAmount,
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+        });
+      } else if (orderType === "shop") {
+        await Order.create({
+          customer: customer._id,
+          orderId: internalOrderId,
+          items: items || [],
+          totalAmount: totalAmount,
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+          trackingStatus: "Order Received",
+        });
+      }
+    } catch (dbError) {
+      console.error("Database error during order creation:", dbError);
+      // We log but do not fail the request if payment succeeded, 
+      // though ideally we'd want a robust queue.
+    }
+
+    // Send emails based on order type
     if (orderType === "workshop" && workshopDetails) {
       const emailHtml = getWorkshopConfirmationEmailHtml(
         customerDetails.name,
@@ -64,50 +134,47 @@ export async function POST(req: Request) {
         internalOrderId
       );
 
-      // We don't await this to avoid slowing down the client response,
-      // but in a production app you might want to use a background job queue.
       sendEmail({
         to: customerDetails.email,
         subject: "Booking Confirmed: Tanjore Painting Workshop - Kriva Studio",
         html: emailHtml,
       }).catch(err => console.error("Failed to send workshop confirmation email", err));
-    } else {
-      // It's a standard Shop order
-      const formattedAddress = `${customerDetails.address}, ${customerDetails.city} - ${customerDetails.pincode}`;
       
-      const customerHtml = getShopCustomerEmailHtml(
-        customerDetails.name,
-        items.map(item => ({ title: item.title, quantity: item.quantity, price: item.price })),
-        totalAmount,
-        internalOrderId,
-        formattedAddress
-      );
-
-      const ownerHtml = getShopOwnerEmailHtml(
-        customerDetails.name,
-        customerDetails.email,
-        customerDetails.phone,
-        formattedAddress,
-        items.map(item => ({ title: item.title, quantity: item.quantity, price: item.price })),
+      // Notify owner
+      if (process.env.SMTP_EMAIL) {
+        sendEmail({
+          to: process.env.SMTP_EMAIL,
+          subject: `New Workshop Booking: ${workshopDetails.title}`,
+          html: `<p>New booking from ${customerDetails.name} (${customerDetails.email}, ${customerDetails.phone}) for ${workshopDetails.title}. Order ID: ${internalOrderId}.</p>`,
+        }).catch(err => console.error("Failed to notify owner", err));
+      }
+    } else if (orderType === "shop") {
+      // Send to Customer
+      const customerHtml = getCustomerOrderConfirmationHtml(
+        customerDetails,
+        items || [],
         totalAmount,
         internalOrderId
       );
-
-      // Send to Customer
       sendEmail({
         to: customerDetails.email,
-        subject: "Order Confirmed: Your handcrafted piece from Kriva Studio",
+        subject: `Order Confirmed - Kriva Studio (${internalOrderId})`,
         html: customerHtml,
-      }).catch(err => console.error("Failed to send shop customer email", err));
+      }).catch(err => console.error("Failed to send shop confirmation to customer", err));
 
       // Send to Owner
-      const ownerEmail = process.env.SMTP_EMAIL;
-      if (ownerEmail) {
+      if (process.env.SMTP_EMAIL) {
+        const ownerHtml = getOwnerOrderNotificationHtml(
+          customerDetails,
+          items || [],
+          totalAmount,
+          internalOrderId
+        );
         sendEmail({
-          to: ownerEmail,
-          subject: `New Order Alert: #${internalOrderId}`,
+          to: process.env.SMTP_EMAIL,
+          subject: `NEW ORDER RECEIVED - ${internalOrderId}`,
           html: ownerHtml,
-        }).catch(err => console.error("Failed to send shop owner email", err));
+        }).catch(err => console.error("Failed to notify owner", err));
       }
     }
 
