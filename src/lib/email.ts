@@ -77,3 +77,118 @@ export const getWorkshopConfirmationEmailHtml = (
     </div>
   `;
 };
+
+export const getOwnerOrderNotificationHtml = (
+  customer: any,
+  items: any[],
+  totalAmount: number,
+  orderId: string
+) => {
+  const itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8;">${item.title}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8; text-align: right;">${item.price}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <h2 style="color: #C9A227; text-align: center;">New Order Received!</h2>
+      <p style="text-align: center; font-size: 14px; color: #8A8070;">Order ID: ${orderId}</p>
+      
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Customer Details</h3>
+        <p style="margin: 5px 0;"><strong>Name:</strong> ${customer.name}</p>
+        <p style="margin: 5px 0;"><strong>Email:</strong> ${customer.email}</p>
+        <p style="margin: 5px 0;"><strong>Phone:</strong> ${customer.phone}</p>
+        <p style="margin: 5px 0;"><strong>Address:</strong> ${customer.address}, ${customer.city} - ${customer.pincode}</p>
+      </div>
+
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Items</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead>
+            <tr>
+              <th style="text-align: left; padding: 10px; border-bottom: 2px solid #E8DCC8;">Item</th>
+              <th style="text-align: center; padding: 10px; border-bottom: 2px solid #E8DCC8;">Qty</th>
+              <th style="text-align: right; padding: 10px; border-bottom: 2px solid #E8DCC8;">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align: right; padding: 15px 10px; font-weight: bold;">Total Paid:</td>
+              <td style="text-align: right; padding: 15px 10px; font-weight: bold; color: #C9A227;">₹${totalAmount.toLocaleString('en-IN')}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+export const getCustomerOrderConfirmationHtml = (
+  customer: any,
+  items: any[],
+  totalAmount: number,
+  orderId: string
+) => {
+  const itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8;">${item.title}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #E8DCC8; text-align: right;">${item.price}</td>
+    </tr>
+  `).join('');
+
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #C9A227; margin: 0;">Kriva Studio</h1>
+        <p style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; color: #8A8070;">Order Confirmed</p>
+      </div>
+      
+      <p style="font-size: 16px;">Dear <strong>${customer.name}</strong>,</p>
+      
+      <p style="font-size: 16px; line-height: 1.6;">
+        Thank you for your order! Your payment was successful. We will begin preparing your handcrafted pieces right away.
+      </p>
+
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Summary (ID: ${orderId})</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 15px;">
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2" style="text-align: right; padding: 10px; font-weight: bold;">Total:</td>
+              <td style="text-align: right; padding: 10px; font-weight: bold; color: #C9A227;">₹${totalAmount.toLocaleString('en-IN')}</td>
+            </tr>
+          </tfoot>
+        </table>
+        
+        <h4 style="margin: 15px 0 5px 0; color: #2B2B2B;">Shipping Address:</h4>
+        <p style="margin: 0; font-size: 14px; color: #666;">
+          ${customer.address}<br>
+          ${customer.city} - ${customer.pincode}
+        </p>
+      </div>
+
+      <div style="background-color: #fff8e1; padding: 15px; border-left: 4px solid #C9A227; border-radius: 4px; margin: 25px 0;">
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #5c4e1c;">
+          <strong>Important Note on Delivery:</strong> Because each piece is exclusively hand-painted just for you, please allow <strong>12-15 days</strong> for the artwork to be beautifully completed, plus an additional <strong>5 days</strong> for standard shipping and delivery.
+        </p>
+      </div>
+
+      <p style="font-size: 16px; margin-top: 30px;">
+        Warmly,<br>
+        <strong>Ruchitha Reddy</strong><br>
+        <span style="color: #C9A227;">Kriva Studio</span>
+      </p>
+    </div>
+  `;
+};

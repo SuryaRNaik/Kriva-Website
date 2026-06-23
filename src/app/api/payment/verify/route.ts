@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { sendEmail, getWorkshopConfirmationEmailHtml } from "@/lib/email";
+import { razorpay } from "@/lib/razorpay";
+import { 
+  sendEmail, 
+  getWorkshopConfirmationEmailHtml,
+  getOwnerOrderNotificationHtml,
+  getCustomerOrderConfirmationHtml
+} from "@/lib/email";
 import type { VerifyPaymentPayload, VerifyPaymentResponse } from "@/types/payment";
 
 export async function POST(req: Request) {
@@ -47,13 +53,18 @@ export async function POST(req: Request) {
     }
 
     // Payment is verified!
-    // In a real application, you would save the order to your database here.
-    // For now, we will just return success and let the client handle it.
     
+    // Force Capture the payment so funds settle to the bank account immediately
+    try {
+      await razorpay.payments.capture(razorpay_payment_id, totalAmount * 100, "INR");
+    } catch (captureError) {
+      console.error("Payment capture failed or was already captured:", captureError);
+    }
+
     // Generate a pseudo-random internal order ID
     const internalOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // If it's a workshop booking, send the confirmation email
+    // Send emails based on order type
     if (orderType === "workshop" && workshopDetails) {
       const emailHtml = getWorkshopConfirmationEmailHtml(
         customerDetails.name,
@@ -64,13 +75,48 @@ export async function POST(req: Request) {
         internalOrderId
       );
 
-      // We don't await this to avoid slowing down the client response,
-      // but in a production app you might want to use a background job queue.
       sendEmail({
         to: customerDetails.email,
         subject: "Booking Confirmed: Tanjore Painting Workshop - Kriva Studio",
         html: emailHtml,
       }).catch(err => console.error("Failed to send workshop confirmation email", err));
+      
+      // Notify owner
+      if (process.env.SMTP_EMAIL) {
+        sendEmail({
+          to: process.env.SMTP_EMAIL,
+          subject: `New Workshop Booking: ${workshopDetails.title}`,
+          html: `<p>New booking from ${customerDetails.name} (${customerDetails.email}, ${customerDetails.phone}) for ${workshopDetails.title}. Order ID: ${internalOrderId}.</p>`,
+        }).catch(err => console.error("Failed to notify owner", err));
+      }
+    } else if (orderType === "shop") {
+      // Send to Customer
+      const customerHtml = getCustomerOrderConfirmationHtml(
+        customerDetails,
+        items || [],
+        totalAmount,
+        internalOrderId
+      );
+      sendEmail({
+        to: customerDetails.email,
+        subject: `Order Confirmed - Kriva Studio (${internalOrderId})`,
+        html: customerHtml,
+      }).catch(err => console.error("Failed to send shop confirmation to customer", err));
+
+      // Send to Owner
+      if (process.env.SMTP_EMAIL) {
+        const ownerHtml = getOwnerOrderNotificationHtml(
+          customerDetails,
+          items || [],
+          totalAmount,
+          internalOrderId
+        );
+        sendEmail({
+          to: process.env.SMTP_EMAIL,
+          subject: `NEW ORDER RECEIVED - ${internalOrderId}`,
+          html: ownerHtml,
+        }).catch(err => console.error("Failed to notify owner", err));
+      }
     }
 
     const responseData: VerifyPaymentResponse = {
