@@ -150,7 +150,7 @@ export default function Navbar() {
         <div className="flex flex-col items-center justify-center h-full gap-8">
           {/* Logo in menu */}
           <Image
-            src="/images/logo.jpg"
+            src="/images/krivanewlogo.jpg"
             alt="Kriva Studio"
             width={80}
             height={80}
