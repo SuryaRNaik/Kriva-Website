@@ -8,6 +8,10 @@ import {
   getCustomerOrderConfirmationHtml
 } from "@/lib/email";
 import type { VerifyPaymentPayload, VerifyPaymentResponse } from "@/types/payment";
+import connectDB from "@/lib/db";
+import Customer from "@/models/Customer";
+import Order from "@/models/Order";
+import WorkshopRegistration from "@/models/WorkshopRegistration";
 
 export async function POST(req: Request) {
   try {
@@ -63,6 +67,61 @@ export async function POST(req: Request) {
 
     // Generate a pseudo-random internal order ID
     const internalOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    // Database Integration
+    try {
+      await connectDB();
+
+      // Find or create customer
+      let customer = await Customer.findOne({ email: customerDetails.email });
+      if (!customer) {
+        customer = await Customer.create({
+          name: customerDetails.name,
+          email: customerDetails.email,
+          phone: customerDetails.phone,
+          address: customerDetails.address,
+          city: customerDetails.city,
+          pincode: customerDetails.pincode,
+        });
+      } else {
+        // Optionally update address if it changed
+        customer.address = customerDetails.address;
+        customer.city = customerDetails.city;
+        customer.pincode = customerDetails.pincode;
+        customer.phone = customerDetails.phone;
+        await customer.save();
+      }
+
+      if (orderType === "workshop" && workshopDetails) {
+        await WorkshopRegistration.create({
+          orderId: internalOrderId,
+          customerName: customerDetails.name,
+          email: customerDetails.email,
+          phone: customerDetails.phone,
+          workshopTitle: workshopDetails.title,
+          date: workshopDetails.date,
+          time: workshopDetails.time,
+          location: workshopDetails.location,
+          amountPaid: totalAmount,
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+        });
+      } else if (orderType === "shop") {
+        await Order.create({
+          customer: customer._id,
+          orderId: internalOrderId,
+          items: items || [],
+          totalAmount: totalAmount,
+          razorpayOrderId: razorpay_order_id,
+          razorpayPaymentId: razorpay_payment_id,
+          trackingStatus: "Order Received",
+        });
+      }
+    } catch (dbError) {
+      console.error("Database error during order creation:", dbError);
+      // We log but do not fail the request if payment succeeded, 
+      // though ideally we'd want a robust queue.
+    }
 
     // Send emails based on order type
     if (orderType === "workshop" && workshopDetails) {
