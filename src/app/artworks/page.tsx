@@ -174,9 +174,9 @@ const ALL_PRODUCTS = [
 ];
 
 type SortKey = "default" | "price-asc" | "price-desc";
-type FilterKey = "All" | "Tanjore Painting" | "Fabric Art";
+type FilterKey = "All";
 
-const FILTERS: FilterKey[] = ["All", "Tanjore Painting", "Fabric Art"];
+const FILTERS: FilterKey[] = ["All"];
 
 const fmt = (n: number) =>
   "₹" + n.toLocaleString("en-IN");
@@ -486,40 +486,6 @@ export default function ArtworksPage() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* ── Custom Order Banner ───────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-6 pb-16">
-        <div
-          className="relative rounded-2xl overflow-hidden px-10 py-12 text-center"
-          style={{ background: "linear-gradient(135deg,#2B2B2B 0%,#1A1A2E 100%)" }}
-        >
-          {/* Faint mandala bg */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04]">
-            <svg viewBox="0 0 300 300" width="320" height="320" fill="none">
-              {[40,80,120].map((r) => (
-                <circle key={r} cx="150" cy="150" r={r} stroke="#C9A227" strokeWidth="1" strokeDasharray="4 6" />
-              ))}
-            </svg>
-          </div>
-          <p className="text-[11px] tracking-[0.35em] uppercase text-[#C9A227] font-medium mb-3 relative z-10">
-            Made Just For You
-          </p>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3 relative z-10"
-            style={{ fontFamily: "'Playfair Display', serif" }}>
-            Can&apos;t find what you&apos;re looking for?
-          </h2>
-          <p className="text-white/65 text-sm max-w-md mx-auto mb-8 leading-relaxed relative z-10">
-            We take custom orders — a Tanjore painting of your deity, a hand-painted saree, or a personalized fabric piece. Just get in touch.
-          </p>
-          <Link
-            href="/contact"
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-sm font-bold text-[#2B2B2B] transition-all hover:opacity-90 hover:scale-105 relative z-10"
-            style={{ background: "linear-gradient(135deg,#F0D97A 0%,#C9A227 50%,#A07830 100%)" }}
-          >
-            Request a Custom Piece →
-          </Link>
-        </div>
       </div>
 
     </div>

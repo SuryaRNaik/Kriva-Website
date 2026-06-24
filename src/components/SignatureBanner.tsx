@@ -93,7 +93,7 @@ export default function SignatureBanner() {
                 className="inline-block px-8 py-3 font-semibold text-sm tracking-wide transition-all duration-300 hover:opacity-90"
                 style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)", color: "#2B2B2B", borderRadius: "4px" }}
               >
-                Shop Artworks
+                Shop COllections
               </Link>
             </div>
           </div>

@@ -331,7 +331,8 @@ export default function HeroSection() {
           className="text-sm sm:text-base text-[#5A5548] leading-relaxed mb-10 max-w-md mx-auto animate-fade-in"
           style={{ animationDelay: "0.4s", opacity: 0 }}
         >
-          Unique hand-painted creations that transform fabric into wearable art — Tanjore paintings, silk sarees &amp; custom pieces, each one a masterpiece.
+            Every Saree Tells a Story, Handcrafted Elegance, Painted with Passion!
+            Discover hand-painted sarees, Tanjore-inspired creations, and immersive workshops where traditional artistry meets contemporary expression. Crafted with love, designed to be worn, admired, and remembered. ✨
         </p>
 
         {/* CTA buttons */}
@@ -348,7 +349,7 @@ export default function HeroSection() {
               boxShadow: "0 4px 24px rgba(201,162,39,0.30)",
             }}
           >
-            Shop Artworks
+            Shop Collections
           </Link>
           <Link
             href="/workshops"

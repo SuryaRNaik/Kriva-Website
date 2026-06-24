@@ -152,7 +152,7 @@ export default function BestSellers() {
         {/* View all CTA */}
         <div className="text-center mt-12">
           <Link
-            href="/shop"
+            href="/artworks"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-[#2B2B2B] font-semibold text-sm tracking-wide shadow-gold transition-all duration-300 hover:opacity-90 hover:scale-105"
             style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
           >
