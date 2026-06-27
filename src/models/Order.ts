@@ -34,7 +34,7 @@ const OrderSchema: Schema = new Schema(
     ],
     totalAmount: { type: Number, required: true },
     razorpayOrderId: { type: String, required: true },
-    razorpayPaymentId: { type: String, required: true },
+    razorpayPaymentId: { type: String, required: true, unique: true },
     trackingStatus: {
       type: String,
       enum: ['Order Received', 'Crafting in Progress', 'Quality Check', 'Ready for Dispatch', 'Shipped', 'Delivered'],

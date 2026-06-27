@@ -12,6 +12,7 @@ import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
 import Order from "@/models/Order";
 import WorkshopRegistration from "@/models/WorkshopRegistration";
+import { SERVER_PRODUCTS, SERVER_WORKSHOPS } from "@/lib/server-products";
 
 export async function POST(req: Request) {
   try {
@@ -22,10 +23,10 @@ export async function POST(req: Request) {
       razorpay_signature,
       customerDetails,
       items,
-      totalAmount,
       orderType,
       workshopDetails,
     } = body;
+    let { totalAmount } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
@@ -56,11 +57,46 @@ export async function POST(req: Request) {
       );
     }
 
-    // Payment is verified!
+    // Payment signature is valid!
     
-    // Force Capture the payment so funds settle to the bank account immediately
+    // 1. Validate the true payment amount securely against server-side prices
+    const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+    let expectedAmount = 0;
+    
+    if (orderType === "shop") {
+      expectedAmount = (items || []).reduce((sum: number, item: any) => {
+        const product = SERVER_PRODUCTS[item.id];
+        if (!product) throw new Error(`Product not found: ${item.id}`);
+        if (!Number.isInteger(item.quantity) || item.quantity <= 0) throw new Error(`Invalid quantity for product: ${item.id}`);
+        return sum + (product.price * item.quantity);
+      }, 0);
+    } else if (orderType === "workshop" && workshopDetails) {
+      const workshop = SERVER_WORKSHOPS[workshopDetails.title];
+      if (!workshop) throw new Error(`Workshop not found: ${workshopDetails.title}`);
+      expectedAmount = workshop.price;
+    }
+
+    if (rzpOrder.amount !== expectedAmount * 100) {
+      return NextResponse.json({ error: "Amount mismatch detected. Security validation failed." }, { status: 400 });
+    }
+
+    // Use secure expected amount for all downstream operations
+    totalAmount = expectedAmount;
+
+    // 2. Idempotency Check (Prevent Replay Attacks)
+    await connectDB();
+    const existingWorkshop = await WorkshopRegistration.findOne({ razorpayPaymentId: razorpay_payment_id });
+    if (existingWorkshop) {
+      return NextResponse.json({ success: true, orderId: existingWorkshop.orderId, message: "Payment already verified" });
+    }
+    const existingOrder = await Order.findOne({ razorpayPaymentId: razorpay_payment_id });
+    if (existingOrder) {
+      return NextResponse.json({ success: true, orderId: existingOrder.orderId, message: "Payment already verified" });
+    }
+    
+    // 3. Force Capture the payment so funds settle
     try {
-      await razorpay.payments.capture(razorpay_payment_id, totalAmount * 100, "INR");
+      await razorpay.payments.capture(razorpay_payment_id, expectedAmount * 100, "INR");
     } catch (captureError) {
       console.error("Payment capture failed or was already captured:", captureError);
     }
@@ -68,9 +104,8 @@ export async function POST(req: Request) {
     // Generate a pseudo-random internal order ID
     const internalOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Database Integration
+    // 4. Database Integration
     try {
-      await connectDB();
 
       // Find or create customer
       let customer = await Customer.findOne({ email: customerDetails.email });
@@ -119,8 +154,7 @@ export async function POST(req: Request) {
       }
     } catch (dbError) {
       console.error("Database error during order creation:", dbError);
-      // We log but do not fail the request if payment succeeded, 
-      // though ideally we'd want a robust queue.
+      return NextResponse.json({ error: "Failed to create order record. Please contact support." }, { status: 500 });
     }
 
     // Send emails based on order type

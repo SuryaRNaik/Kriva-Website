@@ -27,7 +27,7 @@ const WorkshopRegistrationSchema: Schema = new Schema(
     location: { type: String, required: true },
     amountPaid: { type: Number, required: true },
     razorpayOrderId: { type: String, required: true },
-    razorpayPaymentId: { type: String, required: true },
+    razorpayPaymentId: { type: String, required: true, unique: true },
   },
   { timestamps: true }
 );
