@@ -5,44 +5,9 @@ import Link from "next/link";
 import { Heart, ShoppingBag } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 
-const bestSellers = [
-  {
-    id: "dress-1",
-    title: "Blossom Hand-Painted Dress",
-    subtitle: "Floral art on premium fabric",
-    originalPrice: "\u20B93,500",
-    price: "\u20B92,500",
-    discount: "28% OFF",
-    image: "/images/bestseller_1.png",
-  },
-  {
-    id: "dress-2",
-    title: "Geometric Rose Gown",
-    subtitle: "Intricate motif detailing",
-    originalPrice: "\u20B94,200",
-    price: "\u20B93,200",
-    discount: "23% OFF",
-    image: "/images/bestseller_2.png",
-  },
-  {
-    id: "dress-3",
-    title: "Pink Blossom Anarkali",
-    subtitle: "Traditional ethnic wear",
-    originalPrice: "\u20B93,800",
-    price: "\u20B92,800",
-    discount: "26% OFF",
-    image: "/images/bestseller_3.png",
-  },
-  {
-    id: "dress-4",
-    title: "Artisan Maxi Dress",
-    subtitle: "Rich artistic motifs",
-    originalPrice: "\u20B93,000",
-    price: "\u20B92,000",
-    discount: "33% OFF",
-    image: "/images/bestseller_4.png",
-  },
-];
+import { ALL_PRODUCTS } from "@/lib/products";
+
+const bestSellers = ALL_PRODUCTS.slice(0, 4);
 
 export default function BestSellers() {
   const { addToCart, toggleFavorite, isFavorite } = useStore();
@@ -73,10 +38,12 @@ export default function BestSellers() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bestSellers.map((item, index) => {
             const favorited = isFavorite(item.id);
+            const discount = item.originalPrice ? Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100) : null;
             return (
-              <article
+              <Link
+                href={`/product/${item.id}`}
                 key={item.id}
-                className="group bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] card-hover relative flex flex-col"
+                className="group bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] card-hover relative flex flex-col block cursor-pointer"
                 style={{
                   boxShadow: "0 2px 12px rgba(201,162,39,0.06)",
                   animationDelay: `${index * 0.08}s`,
@@ -91,16 +58,18 @@ export default function BestSellers() {
                     className="object-cover transition-transform duration-500 group-hover:scale-110"
                   />
                   {/* Discount badge */}
-                  <span
-                    className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold text-[#2B2B2B] tracking-wide z-10"
-                    style={{ background: "linear-gradient(135deg, #F0D97A, #C9A227)" }}
-                  >
-                    {item.discount}
-                  </span>
+                  {discount && (
+                    <span 
+                      className="absolute top-3 left-3 bg-[#C9A227] text-white text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wide shadow-sm z-10"
+                      style={{ background: "linear-gradient(135deg, #F0D97A, #C9A227)" }}
+                    >
+                      {discount}% OFF
+                    </span>
+                  )}
                   
                   {/* Favorite Button */}
                   <button
-                    onClick={() => toggleFavorite(item)}
+                    onClick={(e) => { e.preventDefault(); toggleFavorite({...item, price: "₹"+item.price}); }}
                     className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-sm z-10 transition-transform hover:scale-110"
                   >
                     <Heart 
@@ -125,18 +94,18 @@ export default function BestSellers() {
                   <div className="flex flex-col mt-auto gap-4">
                     <div className="flex flex-col">
                       <span className="text-xs text-[#8A8070] line-through decoration-[#8A8070]/60">
-                        {item.originalPrice}
+                        {item.originalPrice ? "₹" + item.originalPrice.toLocaleString('en-IN') : ""}
                       </span>
                       <span
                         className="text-xl font-bold text-[#C9A227]"
                         style={{ fontFamily: "'Playfair Display', serif" }}
                       >
-                        {item.price}
+                        ₹{item.price.toLocaleString('en-IN')}
                       </span>
                     </div>
                     
                     <button
-                      onClick={() => addToCart(item)}
+                      onClick={(e) => { e.preventDefault(); addToCart({...item, price: "₹"+item.price}); }}
                       className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold text-[#2B2B2B] transition-all duration-300 transform active:scale-[0.98] opacity-90 hover:opacity-100"
                       style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
                     >
@@ -144,7 +113,7 @@ export default function BestSellers() {
                     </button>
                   </div>
                 </div>
-              </article>
+              </Link>
             );
           })}
         </div>

@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { Heart, ShoppingBag, SlidersHorizontal } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 import BackButton from "@/components/BackButton";
-import { MOCK_SHOP_DATA, CATEGORY_TITLES, ShopProduct } from "@/lib/mockShopData";
+import { CATEGORY_TITLES, getProductsByCategory, Product } from "@/lib/products";
 
 const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
 
@@ -24,7 +24,7 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
-function ProductCard({ product, categoryTitle }: { product: ShopProduct; categoryTitle: string }) {
+function ProductCard({ product, categoryTitle }: { product: Product; categoryTitle: string }) {
   const { addToCart, toggleFavorite, isFavorite } = useStore();
   const [added, setAdded] = useState(false);
   const favorited = isFavorite(product.id);
@@ -59,7 +59,7 @@ function ProductCard({ product, categoryTitle }: { product: ShopProduct; categor
     : null;
 
   return (
-    <article className="group relative bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] flex flex-col transition-all duration-300 hover:shadow-[0_8px_32px_rgba(201,162,39,0.13)] hover:-translate-y-1">
+    <Link href={`/product/${product.id}`} className="group relative bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] flex flex-col transition-all duration-300 hover:shadow-[0_8px_32px_rgba(201,162,39,0.13)] hover:-translate-y-1 block cursor-pointer">
       <div className="relative overflow-hidden aspect-[4/5]">
         <Image
           src={product.image}
@@ -139,7 +139,7 @@ function ProductCard({ product, categoryTitle }: { product: ShopProduct; categor
           <Stars rating={product.rating} />
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
@@ -149,7 +149,7 @@ export default function CategoryPage() {
   const params = useParams();
   const categorySlug = params.category as string;
   const categoryTitle = CATEGORY_TITLES[categorySlug] || "Collection";
-  const allProducts = MOCK_SHOP_DATA[categorySlug] || [];
+  const allProducts = getProductsByCategory(categorySlug);
 
   const [sortKey, setSortKey] = useState<SortKey>("default");
   const [showSort, setShowSort] = useState(false);

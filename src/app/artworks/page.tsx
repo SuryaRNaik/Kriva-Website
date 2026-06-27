@@ -7,171 +7,11 @@ import { Heart, ShoppingBag, SlidersHorizontal } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 import BackButton from "@/components/BackButton";
 
-// ─────────────────────────────────────────────────────────────
-// PRODUCT CATALOGUE — Add / edit / remove products here.
-// To mark a product as sold out, set  soldOut: true
-// Categories: "Tanjore Painting" | "Fabric Art"
-// ─────────────────────────────────────────────────────────────
-const ALL_PRODUCTS = [
-  // ── Tanjore Paintings ──────────────────────────────────────
-  {
-    id: "tanjore-ganesha",
-    title: "Lord Ganesha",
-    subtitle: "Gold-leaf Tanjore painting on wood board",
-    category: "Tanjore Painting",
-    image: "/images/tanjore_ganesha.png",
-    price: 6500,
-    originalPrice: 8000,
-    rating: 4.9,
-    soldOut: false,
-    isNew: true,
-  },
-  {
-    id: "tanjore-krishna",
-    title: "Lord Krishna",
-    subtitle: "Classic Tanjore deity art with gem inlay",
-    category: "Tanjore Painting",
-    image: "/images/tanjore_krishna.png",
-    price: 7200,
-    originalPrice: null,
-    rating: 4.9,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "tanjore-lakshmi",
-    title: "Goddess Lakshmi",
-    subtitle: "Prosperity deity — gold foil & jewel finish",
-    category: "Tanjore Painting",
-    image: "/images/tanjore_lakshmi.png",
-    price: 7800,
-    originalPrice: null,
-    rating: 5.0,
-    soldOut: false,
-    isNew: false,
-  },
-  // ── Fabric Art ─────────────────────────────────────────────
-  {
-    id: "art-elephant",
-    title: "Royal Elephant",
-    subtitle: "Hand-painted ceremonial elephant on silk",
-    category: "Fabric Art",
-    image: "/images/art_elephant.png",
-    price: 3200,
-    originalPrice: 4000,
-    rating: 4.8,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "art-floral",
-    title: "Floral Mandala",
-    subtitle: "Intricate floral mandala on premium fabric",
-    category: "Fabric Art",
-    image: "/images/art_floral.png",
-    price: 2800,
-    originalPrice: null,
-    rating: 4.9,
-    soldOut: false,
-    isNew: true,
-  },
-  {
-    id: "art-lotus",
-    title: "Golden Lotus",
-    subtitle: "Sacred lotus motif in gold and ivory tones",
-    category: "Fabric Art",
-    image: "/images/art_lotus.png",
-    price: 3000,
-    originalPrice: null,
-    rating: 4.8,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "art-peacock",
-    title: "Peacock Dance",
-    subtitle: "Vibrant peacock spread hand-painted on dupatta",
-    category: "Fabric Art",
-    image: "/images/art_peacock.png",
-    price: 3500,
-    originalPrice: 4200,
-    rating: 4.9,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "art-fabric",
-    title: "Heritage Fabric Piece",
-    subtitle: "Traditional motifs on handwoven cotton",
-    category: "Fabric Art",
-    image: "/images/art_fabric.png",
-    price: 5,
-    originalPrice: null,
-    rating: 4.7,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "lehenga-tulip",
-    title: "Tulip Hand-Painted Lehenga",
-    subtitle: "Signature orange tulip lehenga — one of a kind",
-    category: "Fabric Art",
-    image: "/images/lehenga.png",
-    price: 4500,
-    originalPrice: 5500,
-    rating: 5.0,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "dress-blossom",
-    title: "Blossom Hand-Painted Dress",
-    subtitle: "Floral art on premium cotton fabric",
-    category: "Fabric Art",
-    image: "/images/bestseller_1.png",
-    price: 2500,
-    originalPrice: 3500,
-    rating: 4.8,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "dress-geometric",
-    title: "Geometric Rose Gown",
-    subtitle: "Intricate geometric motif detailing",
-    category: "Fabric Art",
-    image: "/images/bestseller_2.png",
-    price: 3200,
-    originalPrice: 4200,
-    rating: 4.9,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "dress-anarkali",
-    title: "Blossom Anarkali",
-    subtitle: "Traditional ethnic hand-painted anarkali",
-    category: "Fabric Art",
-    image: "/images/bestseller_3.png",
-    price: 2800,
-    originalPrice: 3800,
-    rating: 4.8,
-    soldOut: false,
-    isNew: false,
-  },
-  {
-    id: "dress-maxi",
-    title: "Artisan Maxi Dress",
-    subtitle: "Rich artistic motifs on flowing maxi",
-    category: "Fabric Art",
-    image: "/images/bestseller_4.png",
-    price: 2000,
-    originalPrice: 3000,
-    rating: 4.7,
-    soldOut: false,
-    isNew: false,
-  },
-];
+import { ALL_PRODUCTS as GLOBAL_PRODUCTS } from "@/lib/products";
+
+const ALL_PRODUCTS = GLOBAL_PRODUCTS.filter(
+  p => p.category === "Tanjore Painting" || p.category === "Fabric Art"
+);
 
 type SortKey = "default" | "price-asc" | "price-desc";
 type FilterKey = "All" | "Tanjore Painting" | "Fabric Art";
@@ -231,7 +71,7 @@ function ProductCard({ product }: { product: typeof ALL_PRODUCTS[0] }) {
     : null;
 
   return (
-    <article className="group relative bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] flex flex-col transition-all duration-300 hover:shadow-[0_8px_32px_rgba(201,162,39,0.13)] hover:-translate-y-1">
+    <Link href={`/product/${product.id}`} className="group relative bg-white rounded-2xl overflow-hidden border border-[#E8DCC8] flex flex-col transition-all duration-300 hover:shadow-[0_8px_32px_rgba(201,162,39,0.13)] hover:-translate-y-1 block cursor-pointer">
       {/* Image area */}
       <div className="relative overflow-hidden aspect-[4/5]">
         <Image
@@ -317,7 +157,7 @@ function ProductCard({ product }: { product: typeof ALL_PRODUCTS[0] }) {
           <Stars rating={product.rating} />
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
