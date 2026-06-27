@@ -12,7 +12,9 @@ import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
 import Order from "@/models/Order";
 import WorkshopRegistration from "@/models/WorkshopRegistration";
-import { SERVER_PRODUCTS, SERVER_WORKSHOPS } from "@/lib/server-products";
+import Product from "@/models/Product";
+import { SERVER_WORKSHOPS } from "@/lib/server-products";
+import { addWorkingDays } from "@/lib/date-utils";
 
 export async function POST(req: Request) {
   try {
@@ -43,8 +45,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify signature
-    // The signature is an HMAC hex digest of "order_id|payment_id" using the secret
     const generated_signature = crypto
       .createHmac("sha256", secret)
       .update(razorpay_order_id + "|" + razorpay_payment_id)
@@ -57,34 +57,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Payment signature is valid!
-    
-    // 1. Validate the true payment amount securely against server-side prices
-    const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
-    let expectedAmount = 0;
-    
-    if (orderType === "shop") {
-      expectedAmount = (items || []).reduce((sum: number, item: any) => {
-        const product = SERVER_PRODUCTS[item.id];
-        if (!product) throw new Error(`Product not found: ${item.id}`);
-        if (!Number.isInteger(item.quantity) || item.quantity <= 0) throw new Error(`Invalid quantity for product: ${item.id}`);
-        return sum + (product.price * item.quantity);
-      }, 0);
-    } else if (orderType === "workshop" && workshopDetails) {
-      const workshop = SERVER_WORKSHOPS[workshopDetails.title];
-      if (!workshop) throw new Error(`Workshop not found: ${workshopDetails.title}`);
-      expectedAmount = workshop.price;
-    }
-
-    if (rzpOrder.amount !== expectedAmount * 100) {
-      return NextResponse.json({ error: "Amount mismatch detected. Security validation failed." }, { status: 400 });
-    }
-
-    // Use secure expected amount for all downstream operations
-    totalAmount = expectedAmount;
-
-    // 2. Idempotency Check (Prevent Replay Attacks)
     await connectDB();
+
+    // 1. Idempotency Check (Prevent Replay Attacks)
     const existingWorkshop = await WorkshopRegistration.findOne({ razorpayPaymentId: razorpay_payment_id });
     if (existingWorkshop) {
       return NextResponse.json({ success: true, orderId: existingWorkshop.orderId, message: "Payment already verified" });
@@ -93,6 +68,50 @@ export async function POST(req: Request) {
     if (existingOrder) {
       return NextResponse.json({ success: true, orderId: existingOrder.orderId, message: "Payment already verified" });
     }
+
+    // 2. Validate amount securely and atomically reserve stock
+    const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+    let expectedAmount = 0;
+    const reservedItems: { id: string, quantity: number }[] = [];
+    
+    try {
+      if (orderType === "shop") {
+        for (const item of (items || [])) {
+          if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+            throw new Error(`Invalid quantity for product: ${item.id}`);
+          }
+          // Atomically decrement stock
+          const product = await Product.findOneAndUpdate(
+            { id: item.id, stock: { $gte: item.quantity } },
+            { $inc: { stock: -item.quantity } },
+            { new: false } // Returns document before update
+          );
+          
+          if (!product) {
+            throw new Error(`Product ${item.id} is out of stock or insufficient quantity`);
+          }
+          
+          reservedItems.push({ id: item.id, quantity: item.quantity });
+          expectedAmount += product.price * item.quantity;
+        }
+      } else if (orderType === "workshop" && workshopDetails) {
+        const workshop = SERVER_WORKSHOPS[workshopDetails.title];
+        if (!workshop) throw new Error(`Workshop not found: ${workshopDetails.title}`);
+        expectedAmount = workshop.price;
+      }
+
+      if (rzpOrder.amount !== expectedAmount * 100) {
+        throw new Error("Amount mismatch detected. Security validation failed.");
+      }
+    } catch (validationError: any) {
+      // Rollback reserved stock
+      for (const res of reservedItems) {
+        await Product.findOneAndUpdate({ id: res.id }, { $inc: { stock: res.quantity } });
+      }
+      return NextResponse.json({ error: validationError.message }, { status: 400 });
+    }
+
+    totalAmount = expectedAmount;
     
     // 3. Force Capture the payment so funds settle
     try {
@@ -101,13 +120,10 @@ export async function POST(req: Request) {
       console.error("Payment capture failed or was already captured:", captureError);
     }
 
-    // Generate a pseudo-random internal order ID
     const internalOrderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     // 4. Database Integration
     try {
-
-      // Find or create customer
       let customer = await Customer.findOne({ email: customerDetails.email });
       if (!customer) {
         customer = await Customer.create({
@@ -119,7 +135,6 @@ export async function POST(req: Request) {
           pincode: customerDetails.pincode,
         });
       } else {
-        // Optionally update address if it changed
         customer.address = customerDetails.address;
         customer.city = customerDetails.city;
         customer.pincode = customerDetails.pincode;
@@ -142,6 +157,9 @@ export async function POST(req: Request) {
           razorpayPaymentId: razorpay_payment_id,
         });
       } else if (orderType === "shop") {
+        const paymentDate = new Date();
+        const cancellationDeadline = addWorkingDays(paymentDate, 3);
+        
         await Order.create({
           customer: customer._id,
           orderId: internalOrderId,
@@ -150,14 +168,24 @@ export async function POST(req: Request) {
           razorpayOrderId: razorpay_order_id,
           razorpayPaymentId: razorpay_payment_id,
           trackingStatus: "Order Received",
+          paymentDate,
+          cancellationDeadline,
+          orderStatus: "Active",
+          refundStatus: "None",
         });
       }
     } catch (dbError) {
       console.error("Database error during order creation:", dbError);
+      // Rollback stock because order failed to save
+      if (orderType === "shop") {
+        for (const res of reservedItems) {
+          await Product.findOneAndUpdate({ id: res.id }, { $inc: { stock: res.quantity } });
+        }
+      }
       return NextResponse.json({ error: "Failed to create order record. Please contact support." }, { status: 500 });
     }
 
-    // Send emails based on order type
+    // Send emails
     if (orderType === "workshop" && workshopDetails) {
       const emailHtml = getWorkshopConfirmationEmailHtml(
         customerDetails.name,
@@ -173,7 +201,7 @@ export async function POST(req: Request) {
         subject: "Booking Confirmed: Tanjore Painting Workshop - Kriva Studio",
         html: emailHtml,
       }).catch(err => console.error("Failed to send workshop confirmation email", err));
-      // Notify owner
+      
       if (process.env.SMTP_EMAIL) {
         sendEmail({
           to: process.env.SMTP_EMAIL,
@@ -182,7 +210,6 @@ export async function POST(req: Request) {
         }).catch(err => console.error("Failed to notify owner", err));
       }
     } else if (orderType === "shop") {
-      // Send to Customer
       const customerHtml = getCustomerOrderConfirmationHtml(
         customerDetails,
         items || [],
@@ -195,7 +222,6 @@ export async function POST(req: Request) {
         html: customerHtml,
       }).catch(err => console.error("Failed to send shop confirmation to customer", err));
 
-      // Send to Owner
       if (process.env.SMTP_EMAIL) {
         const ownerHtml = getOwnerOrderNotificationHtml(
           customerDetails,

@@ -188,7 +188,74 @@ export const getCustomerOrderConfirmationHtml = (
         Warmly,<br>
         <strong>Ruchitha Reddy</strong><br>
         <span style="color: #C9A227;">Kriva Studio</span>
+    </div>
+  `;
+};
+
+export const getCustomerRefundEmailHtml = (
+  customer: any,
+  order: any,
+  refundId: string
+) => {
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #C62828; margin: 0;">Kriva Studio</h1>
+        <p style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; color: #8A8070;">Order Cancelled</p>
+      </div>
+      
+      <p style="font-size: 16px;">Dear <strong>${customer.name}</strong>,</p>
+      
+      <p style="font-size: 16px; line-height: 1.6;">
+        As per your request, we have successfully cancelled your order (<strong>${order.orderId}</strong>).
       </p>
+
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Refund Details</h3>
+        <p style="margin: 5px 0;"><strong>Refund Status:</strong> Initiated</p>
+        <p style="margin: 5px 0;"><strong>Refund Amount:</strong> ₹${order.totalAmount.toLocaleString('en-IN')}</p>
+        <p style="margin: 5px 0;"><strong>Refund ID:</strong> ${refundId}</p>
+      </div>
+
+      <div style="background-color: #e8f5e9; padding: 15px; border-left: 4px solid #4caf50; border-radius: 4px; margin: 25px 0;">
+        <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #1b5e20;">
+          A full refund has been initiated to your original payment method. It usually takes <strong>5–7 business days</strong> for the funds to reflect in your account, depending on your bank.
+        </p>
+      </div>
+
+      <p style="font-size: 16px; margin-top: 30px;">
+        We hope to serve you again in the future!<br><br>
+        Warmly,<br>
+        <strong>Ruchitha Reddy</strong><br>
+        <span style="color: #C9A227;">Kriva Studio</span>
+      </p>
+    </div>
+  `;
+};
+
+export const getOwnerCancellationEmailHtml = (
+  customer: any,
+  order: any,
+  refundId: string,
+  reason: string
+) => {
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #fff3f3;">
+      <h2 style="color: #C62828; text-align: center;">Order Cancelled</h2>
+      <p style="text-align: center; font-size: 14px; color: #8A8070;">Order ID: ${order.orderId}</p>
+      
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #ffcdd2; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Cancellation Details</h3>
+        <p style="margin: 5px 0;"><strong>Customer:</strong> ${customer.name} (${customer.email})</p>
+        <p style="margin: 5px 0; color: #C62828;"><strong>Reason Given:</strong> ${reason}</p>
+      </div>
+
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Refund Automated</h3>
+        <p style="margin: 5px 0;">The system has automatically refunded the customer via Razorpay.</p>
+        <p style="margin: 5px 0;"><strong>Refund ID:</strong> ${refundId}</p>
+        <p style="margin: 5px 0;"><strong>Amount Refunded:</strong> ₹${order.totalAmount.toLocaleString('en-IN')}</p>
+      </div>
     </div>
   `;
 };

@@ -15,6 +15,13 @@ export interface IOrder extends Document {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   trackingStatus: string;
+  paymentDate: Date;
+  cancellationDeadline: Date;
+  orderStatus: string;
+  refundStatus: string;
+  refundId?: string;
+  refundDate?: Date;
+  cancellationReason?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +47,21 @@ const OrderSchema: Schema = new Schema(
       enum: ['Order Received', 'Crafting in Progress', 'Quality Check', 'Ready for Dispatch', 'Shipped', 'Delivered'],
       default: 'Order Received',
     },
+    paymentDate: { type: Date },
+    cancellationDeadline: { type: Date },
+    orderStatus: {
+      type: String,
+      enum: ['Active', 'Cancelled'],
+      default: 'Active',
+    },
+    refundStatus: {
+      type: String,
+      enum: ['None', 'Processed', 'Failed'],
+      default: 'None',
+    },
+    refundId: { type: String },
+    refundDate: { type: Date },
+    cancellationReason: { type: String },
   },
   { timestamps: true }
 );
