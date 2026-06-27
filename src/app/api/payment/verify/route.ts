@@ -67,6 +67,7 @@ export async function POST(req: Request) {
       expectedAmount = (items || []).reduce((sum: number, item: any) => {
         const product = SERVER_PRODUCTS[item.id];
         if (!product) throw new Error(`Product not found: ${item.id}`);
+        if (!Number.isInteger(item.quantity) || item.quantity <= 0) throw new Error(`Invalid quantity for product: ${item.id}`);
         return sum + (product.price * item.quantity);
       }, 0);
     } else if (orderType === "workshop" && workshopDetails) {
@@ -84,16 +85,13 @@ export async function POST(req: Request) {
 
     // 2. Idempotency Check (Prevent Replay Attacks)
     await connectDB();
-    if (orderType === "workshop") {
-      const existing = await WorkshopRegistration.findOne({ razorpayPaymentId: razorpay_payment_id });
-      if (existing) {
-        return NextResponse.json({ success: true, orderId: existing.orderId, message: "Payment already verified" });
-      }
-    } else {
-      const existing = await Order.findOne({ razorpayPaymentId: razorpay_payment_id });
-      if (existing) {
-        return NextResponse.json({ success: true, orderId: existing.orderId, message: "Payment already verified" });
-      }
+    const existingWorkshop = await WorkshopRegistration.findOne({ razorpayPaymentId: razorpay_payment_id });
+    if (existingWorkshop) {
+      return NextResponse.json({ success: true, orderId: existingWorkshop.orderId, message: "Payment already verified" });
+    }
+    const existingOrder = await Order.findOne({ razorpayPaymentId: razorpay_payment_id });
+    if (existingOrder) {
+      return NextResponse.json({ success: true, orderId: existingOrder.orderId, message: "Payment already verified" });
     }
     
     // 3. Force Capture the payment so funds settle
@@ -156,8 +154,7 @@ export async function POST(req: Request) {
       }
     } catch (dbError) {
       console.error("Database error during order creation:", dbError);
-      // We log but do not fail the request if payment succeeded, 
-      // though ideally we'd want a robust queue.
+      return NextResponse.json({ error: "Failed to create order record. Please contact support." }, { status: 500 });
     }
 
     // Send emails based on order type
