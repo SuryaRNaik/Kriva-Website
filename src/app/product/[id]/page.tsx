@@ -8,7 +8,6 @@ import { Heart, ShoppingBag, Minus, Plus, ArrowLeft } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 import { getProductById, getRelatedProducts, Product } from "@/lib/products";
 
-const SIZES = ["S", "M", "L", "XL", "XXL"];
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -22,6 +21,24 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState("M");
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
+  
+  const [zoomStyle, setZoomStyle] = useState<React.CSSProperties>({ display: 'none' });
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomStyle({
+      display: 'block',
+      backgroundImage: `url(${mainImage})`,
+      backgroundPosition: `${x}% ${y}%`,
+      backgroundSize: '200%',
+      position: 'absolute',
+      inset: 0,
+      zIndex: 10,
+      pointerEvents: 'none'
+    });
+  };
+  const handleMouseLeave = () => setZoomStyle({ display: 'none' });
   
   const { addToCart, toggleFavorite, isFavorite } = useStore();
 
@@ -108,25 +125,41 @@ export default function ProductDetailPage() {
           
           {/* Left Column: Image Gallery */}
           <div className="flex flex-col gap-4">
-            <div className="relative aspect-[4/5] bg-white rounded-3xl overflow-hidden border border-[#E8DCC8]">
-              <Image 
-                src={mainImage} 
-                alt={product.title} 
-                fill 
-                className="object-cover"
-                priority
-              />
-              {product.soldOut && (
-                <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[2px]">
+            {/* Desktop Image with Zoom */}
+            <div 
+              className="relative aspect-[4/5] bg-white rounded-3xl overflow-hidden border border-[#E8DCC8] hidden md:block cursor-crosshair"
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+            >
+              <Image src={mainImage} alt={product.title} fill className="object-cover" priority />
+              <div style={zoomStyle} />
+              {product.stock === 0 && (
+                <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[2px] z-20">
                   <span className="px-6 py-2 bg-[#2B2B2B] text-white font-bold tracking-widest uppercase rounded-full">
                     Sold Out
                   </span>
                 </div>
               )}
             </div>
+
+            {/* Mobile Swipeable Carousel */}
+            <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory scrollbar-hide rounded-3xl border border-[#E8DCC8] w-full">
+              {product.gallery.map((img, idx) => (
+                <div key={idx} className="relative w-full aspect-[4/5] shrink-0 snap-center">
+                  <Image src={img} alt={`${product.title} ${idx + 1}`} fill className="object-cover" priority={idx === 0} />
+                  {product.stock === 0 && (
+                    <div className="absolute inset-0 bg-white/40 flex items-center justify-center backdrop-blur-[2px]">
+                      <span className="px-6 py-2 bg-[#2B2B2B] text-white font-bold tracking-widest uppercase rounded-full">
+                        Sold Out
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             
-            {/* Thumbnails */}
-            <div className="flex gap-4 overflow-x-auto scrollbar-hide py-2">
+            {/* Thumbnails (Desktop Only) */}
+            <div className="hidden md:flex gap-4 overflow-x-auto scrollbar-hide py-2">
               {product.gallery.map((img, idx) => (
                 <button
                   key={idx}
@@ -176,28 +209,37 @@ export default function ProductDetailPage() {
               <p>{product.details.description}</p>
             </div>
 
-            {/* Size Selector */}
-            <div className="mb-8">
-              <div className="flex justify-between items-end mb-3">
-                <span className="text-sm font-bold text-[#2B2B2B] uppercase tracking-wide">Size</span>
-                <button className="text-xs text-[#C9A227] underline underline-offset-2">Size Guide</button>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {SIZES.map(size => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                      selectedSize === size
-                        ? "bg-[#2B2B2B] text-white shadow-lg scale-110"
-                        : "bg-white text-[#5A5548] border border-[#E8DCC8] hover:border-[#C9A227]"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
+            <div className="mb-6 flex items-center gap-2">
+              <span className={`inline-flex items-center justify-center w-2 h-2 rounded-full ${product.stock > 0 ? "bg-[#22c55e]" : "bg-red-500"}`}></span>
+              <span className="text-sm font-semibold text-[#5A5548]">
+                {product.stock === 0 ? "Out of Stock" : product.stock <= 3 ? `Only ${product.stock} left in stock` : "In Stock"}
+              </span>
             </div>
+
+            {/* Size Selector */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div className="mb-8">
+                <div className="flex justify-between items-end mb-3">
+                  <span className="text-sm font-bold text-[#2B2B2B] uppercase tracking-wide">Size</span>
+                  <button className="text-xs text-[#C9A227] underline underline-offset-2">Size Guide</button>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {product.sizes.map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                        selectedSize === size
+                          ? "bg-[#2B2B2B] text-white shadow-lg scale-110"
+                          : "bg-white text-[#5A5548] border border-[#E8DCC8] hover:border-[#C9A227]"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="mb-10 flex items-center gap-6">
@@ -217,16 +259,16 @@ export default function ProductDetailPage() {
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <button
                 onClick={handleAddToCart}
-                disabled={product.soldOut}
+                disabled={product.stock === 0}
                 className="flex-1 flex items-center justify-center gap-2 py-4 rounded-full text-sm font-bold text-[#2B2B2B] transition-all hover:opacity-90 disabled:opacity-50 hover:scale-[1.02]"
                 style={{ background: added ? "#22c55e" : "linear-gradient(135deg,#F0D97A 0%,#C9A227 50%,#A07830 100%)" }}
               >
                 <ShoppingBag size={18} />
-                {product.soldOut ? "Sold Out" : added ? "Added to Cart ✓" : "Add to Cart"}
+                {product.stock === 0 ? "Sold Out" : added ? "Added to Cart ✓" : "Add to Cart"}
               </button>
               <button
                 onClick={handleBuyNow}
-                disabled={product.soldOut}
+                disabled={product.stock === 0}
                 className="flex-1 flex items-center justify-center py-4 rounded-full text-sm font-bold text-white bg-[#2B2B2B] transition-all hover:bg-[#1A1A2E] disabled:opacity-50 hover:scale-[1.02]"
               >
                 Buy It Now
@@ -241,6 +283,16 @@ export default function ProductDetailPage() {
 
             {/* Product Details Accodion / Blocks */}
             <div className="border-t border-[#E8DCC8] pt-8 space-y-6">
+              {product.details.craftsmanshipDetails && (
+                <div>
+                  <h3 className="text-sm font-bold text-[#2B2B2B] uppercase tracking-wide mb-2 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" /> Craftsmanship
+                  </h3>
+                  <p className="text-sm text-[#5A5548] leading-relaxed pl-3.5">
+                    {product.details.craftsmanshipDetails}
+                  </p>
+                </div>
+              )}
               <div>
                 <h3 className="text-sm font-bold text-[#2B2B2B] uppercase tracking-wide mb-2 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#C9A227]" /> Fabric Details
@@ -257,10 +309,15 @@ export default function ProductDetailPage() {
                   {product.details.careInstructions}
                 </p>
               </div>
-              <div className="bg-[#FAF0D9]/40 p-4 rounded-xl border border-[#F0D97A]/30">
+              <div className="bg-[#FAF0D9]/40 p-4 rounded-xl border border-[#F0D97A]/30 flex flex-col gap-3">
                 <p className="text-sm text-[#2B2B2B] font-medium flex items-center gap-2">
                   <span className="text-lg">⏳</span> Estimated Crafting Time: <span className="font-bold text-[#C9A227]">{product.details.craftingTime}</span>
                 </p>
+                {product.details.estimatedDeliveryTime && (
+                  <p className="text-sm text-[#2B2B2B] font-medium flex items-center gap-2">
+                    <span className="text-lg">🚚</span> Estimated Delivery: <span className="font-bold text-[#C9A227]">{product.details.estimatedDeliveryTime}</span>
+                  </p>
+                )}
               </div>
             </div>
 

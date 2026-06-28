@@ -69,7 +69,7 @@ export default function BestSellers() {
                   
                   {/* Favorite Button */}
                   <button
-                    onClick={(e) => { e.preventDefault(); toggleFavorite({...item, price: "₹"+item.price}); }}
+                    onClick={(e) => { e.preventDefault(); toggleFavorite({id: item.id, title: item.title, subtitle: item.subtitle, price: "₹"+item.price, image: item.image}); }}
                     className="absolute top-3 right-3 p-2 rounded-full bg-white/90 shadow-sm z-10 transition-transform hover:scale-110"
                   >
                     <Heart 
@@ -105,7 +105,7 @@ export default function BestSellers() {
                     </div>
                     
                     <button
-                      onClick={(e) => { e.preventDefault(); addToCart({...item, price: "₹"+item.price}); }}
+                      onClick={(e) => { e.preventDefault(); addToCart({id: item.id, title: item.title, subtitle: item.subtitle, price: "₹"+item.price, image: item.image}); }}
                       className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full text-xs font-semibold text-[#2B2B2B] transition-all duration-300 transform active:scale-[0.98] opacity-90 hover:opacity-100"
                       style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
                     >
