@@ -5,7 +5,7 @@ import Link from "next/link";
 
 const artworks = [
   {
-    id: "floral-tanjore",
+    id: "art-floral",
     title: "Floral Tanjore",
     subtitle: "Gold leaf on wood panel",
     price: "₹10,500",
@@ -13,7 +13,7 @@ const artworks = [
     category: "Tanjore",
   },
   {
-    id: "peacock-kalamkari",
+    id: "art-peacock",
     title: "Peacock Kalamkari",
     subtitle: "Hand-painted fabric art",
     price: "₹12,000",
@@ -21,7 +21,7 @@ const artworks = [
     category: "Kalamkari",
   },
   {
-    id: "royal-elephant",
+    id: "art-elephant",
     title: "Royal Elephant",
     subtitle: "Mixed media on canvas",
     price: "₹22,000",
@@ -29,7 +29,7 @@ const artworks = [
     category: "Tanjore",
   },
   {
-    id: "lotus-mandala",
+    id: "art-lotus",
     title: "Lotus Mandala",
     subtitle: "Gold leaf Tanjore painting",
     price: "₹15,500",
@@ -37,7 +37,7 @@ const artworks = [
     category: "Mandala",
   },
   {
-    id: "fabric-motif",
+    id: "art-fabric",
     title: "Fabric Motif Art",
     subtitle: "Fabric art with embroidery",
     price: "₹9,800",
@@ -45,7 +45,7 @@ const artworks = [
     category: "Fabric Art",
   },
   {
-    id: "tanjore-heritage",
+    id: "tanjore-ganesha",
     title: "Tanjore Heritage",
     subtitle: "Traditional Tanjore masterpiece",
     price: "₹28,000",
@@ -127,7 +127,7 @@ export default function ArtworksGallery() {
                     {art.price}
                   </span>
                   <Link
-                    href={`/artworks/${art.id}`}
+                    href={`/product/${art.id}`}
                     id={`view-artwork-${art.id}`}
                     className="px-4 py-1.5 rounded-full text-xs font-semibold text-[#D81B60] border border-[#D81B60] hover:bg-[#D81B60] hover:text-white transition-all duration-300"
                   >

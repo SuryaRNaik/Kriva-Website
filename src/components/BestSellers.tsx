@@ -72,8 +72,11 @@ export default function BestSellers() {
                     onClick={(e) => { 
                       e.preventDefault(); 
                       toggleFavorite({
-                        ...item, 
-                        price: "₹"+item.price, 
+                        id: item.id,
+                        title: item.title,
+                        subtitle: item.subtitle,
+                        price: "₹" + item.price,
+                        image: item.image,
                         originalPrice: item.originalPrice ? "₹" + item.originalPrice.toLocaleString('en-IN') : undefined
                       }); 
                     }}
@@ -115,8 +118,11 @@ export default function BestSellers() {
                       onClick={(e) => { 
                         e.preventDefault(); 
                         addToCart({
-                          ...item, 
-                          price: "₹"+item.price,
+                          id: item.id,
+                          title: item.title,
+                          subtitle: item.subtitle,
+                          price: "₹" + item.price,
+                          image: item.image,
                           originalPrice: item.originalPrice ? "₹" + item.originalPrice.toLocaleString('en-IN') : undefined
                         }); 
                       }}

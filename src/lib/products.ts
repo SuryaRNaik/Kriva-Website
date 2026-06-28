@@ -2,7 +2,9 @@ export type ProductDetails = {
   description: string;
   fabricDetails: string;
   careInstructions: string;
+  craftsmanshipDetails: string;
   craftingTime: string;
+  estimatedDeliveryTime: string;
 };
 
 export type Product = {
@@ -17,7 +19,9 @@ export type Product = {
   image: string;
   gallery: string[];
   soldOut: boolean;
+  stock: number;
   isNew: boolean;
+  sizes?: string[];
   details: ProductDetails;
 };
 
@@ -25,7 +29,9 @@ const defaultDetails: ProductDetails = {
   description: "A stunning handcrafted piece by Kriva Studio, designed to bring elegance and traditional artistry to your wardrobe or home. Every motif is carefully hand-painted by Ruchitha Reddy.",
   fabricDetails: "Premium quality fabric/material sourced for durability and aesthetic appeal.",
   careInstructions: "Dry clean only. Do not iron directly on the painted motifs.",
+  craftsmanshipDetails: "Meticulously hand-painted by skilled artisans using traditional techniques.",
   craftingTime: "10-15 Days",
+  estimatedDeliveryTime: "3-5 Business Days",
 };
 
 function generateGallery(mainImage: string): string[] {
@@ -91,11 +97,55 @@ const rawProducts = [
   { id: "kids-6", title: "Lavender Kids Dress", subtitle: "Soft comfortable premium fabric", category: "Kids Wear", categorySlug: "kids-wear", price: 3800, originalPrice: null, rating: 4.9, image: "/images/mockup_kids.png", soldOut: true, isNew: false },
 ];
 
-export const ALL_PRODUCTS: Product[] = rawProducts.map(p => ({
-  ...p,
-  gallery: generateGallery(p.image),
-  details: defaultDetails,
-}));
+export const ALL_PRODUCTS: Product[] = rawProducts.map((p: any) => {
+  const isClothing = ["fabric-art", "mens-wear", "lehengas", "suit-sets", "kids-wear"].includes(p.categorySlug) && !p.id.startsWith("art-");
+  
+  let details = { ...defaultDetails };
+  let gallery = generateGallery(p.image);
+  let stock = p.soldOut ? 0 : 5;
+
+  if (p.id === "dress-1") {
+    details = {
+      description: "The Blossom Hand-Painted Dress is a signature Kriva piece. Crafted from luxurious pure silk, it features cascading floral motifs painted entirely by hand. The breathable fabric and flowing silhouette make it perfect for both daytime events and elegant evenings.",
+      fabricDetails: "100% Pure Silk with a smooth, lustrous finish.",
+      careInstructions: "Strictly dry clean. Store in a muslin cloth. Keep away from direct sunlight to preserve the vibrant hand-painted colors.",
+      craftsmanshipDetails: "Over 40 hours of dedicated hand-painting went into the floral panels of this dress.",
+      craftingTime: "12-15 Days",
+      estimatedDeliveryTime: "2-4 Business Days",
+    };
+    gallery = ["/images/bestseller_1.png", "/images/bestseller_2.png", "/images/bestseller_3.png"];
+    stock = 2;
+  } else if (p.id === "tanjore-ganesha") {
+    details = {
+      description: "A breathtaking Tanjore painting of Lord Ganesha, seated on a magnificent throne. This traditional art form from Tamil Nadu is characterized by rich, flat colors, simple iconic composition, glittering 22k gold foils overlaid on delicate but extensive gesso work and inlay of semi-precious stones.",
+      fabricDetails: "Water-resistant plywood board, 22k gold leaf, semi-precious Jaipur stones, poster colors.",
+      careInstructions: "Keep away from moisture. Wipe gently with a soft dry microfiber cloth. Do not use chemical glass cleaners on the frame.",
+      craftsmanshipDetails: "Authentic Tanjore technique using genuine 22k gold foil and traditional stone inlay.",
+      craftingTime: "20-25 Days",
+      estimatedDeliveryTime: "5-7 Business Days (Fragile Shipping)",
+    };
+    gallery = ["/images/tanjore_ganesha.png", "/images/tanjore_krishna.png", "/images/tanjore_lakshmi.png"];
+    stock = 1;
+  } else if (p.id === "saree-1") {
+    details = {
+      description: "Our Pastel Rose Saree brings a modern aesthetic to classic organza. Adorned with delicate, hand-painted roses along the border and pallu, this saree feels light as air and drapes flawlessly.",
+      fabricDetails: "Premium sheer organza, exceptionally lightweight.",
+      careInstructions: "Dry clean only. Roll press recommended. Do not wring or spray perfume directly on the painted areas.",
+      craftsmanshipDetails: "Hand-painted using specialized fabric acrylics that blend seamlessly into the organza.",
+      craftingTime: "15 Days",
+      estimatedDeliveryTime: "3-5 Business Days",
+    };
+    stock = 12;
+  }
+
+  return {
+    ...p,
+    sizes: isClothing ? ["S", "M", "L", "XL", "XXL"] : undefined,
+    stock,
+    gallery,
+    details,
+  } as Product;
+});
 
 export function getProductById(id: string): Product | undefined {
   return ALL_PRODUCTS.find(p => p.id === id);
