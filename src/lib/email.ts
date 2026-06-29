@@ -259,3 +259,75 @@ export const getOwnerCancellationEmailHtml = (
     </div>
   `;
 };
+
+export const getShippingNotificationHtml = (
+  customerName: string,
+  orderId: string,
+  courierName: string,
+  trackingNumber: string,
+  dispatchDate: string,
+  expectedDeliveryDate: string
+) => {
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #C9A227; margin: 0;">Kriva Studio</h1>
+        <p style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; color: #8A8070;">Order Shipped</p>
+      </div>
+      
+      <p style="font-size: 16px;">Dear <strong>${customerName}</strong>,</p>
+      
+      <p style="font-size: 16px; line-height: 1.6;">
+        Great news! Your order <strong>${orderId}</strong> has been shipped and is on its way to you.
+      </p>
+
+      <div style="background-color: white; padding: 20px; border-radius: 8px; border: 1px solid #E8DCC8; margin: 25px 0;">
+        <h3 style="margin-top: 0; color: #2B2B2B; border-bottom: 1px solid #eee; padding-bottom: 10px;">Shipping Details</h3>
+        <p style="margin: 5px 0;"><strong>Courier / Delivery Partner:</strong> ${courierName}</p>
+        <p style="margin: 5px 0;"><strong>Tracking Number / Reference:</strong> ${trackingNumber}</p>
+        <p style="margin: 5px 0;"><strong>Dispatch Date:</strong> ${dispatchDate}</p>
+        <p style="margin: 5px 0;"><strong>Expected Delivery:</strong> ${expectedDeliveryDate || "To be updated by courier"}</p>
+      </div>
+
+      <p style="font-size: 16px; line-height: 1.6;">
+        You can track your order by visiting the 'My Orders' section on our website.
+      </p>
+
+      <p style="font-size: 16px; margin-top: 30px;">
+        Warmly,<br>
+        <strong>Ruchitha Reddy</strong><br>
+        <span style="color: #C9A227;">Kriva Studio</span>
+      </p>
+    </div>
+  `;
+};
+
+export const getDeliveryConfirmationHtml = (
+  customerName: string,
+  orderId: string
+) => {
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #C9A227; margin: 0;">Kriva Studio</h1>
+        <p style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; color: #8A8070;">Order Delivered</p>
+      </div>
+      
+      <p style="font-size: 16px;">Dear <strong>${customerName}</strong>,</p>
+      
+      <p style="font-size: 16px; line-height: 1.6;">
+        Your order <strong>${orderId}</strong> has been successfully delivered! 
+      </p>
+
+      <p style="font-size: 16px; line-height: 1.6;">
+        We hope you love your new pieces. Thank you for shopping with Kriva Studio and supporting our craftsmanship.
+      </p>
+
+      <p style="font-size: 16px; margin-top: 30px;">
+        Warmly,<br>
+        <strong>Ruchitha Reddy</strong><br>
+        <span style="color: #C9A227;">Kriva Studio</span>
+      </p>
+    </div>
+  `;
+};

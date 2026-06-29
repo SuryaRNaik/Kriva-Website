@@ -15,6 +15,12 @@ export interface IOrder extends Document {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   trackingStatus: string;
+  courierName?: string;
+  trackingNumber?: string;
+  dispatchDate?: Date;
+  expectedDeliveryDate?: Date;
+  shippingNotes?: string;
+  deliveryMethod?: string;
   paymentDate: Date;
   cancellationDeadline: Date;
   orderStatus: string;
@@ -44,9 +50,15 @@ const OrderSchema: Schema = new Schema(
     razorpayPaymentId: { type: String, required: true, unique: true },
     trackingStatus: {
       type: String,
-      enum: ['Order Received', 'Crafting in Progress', 'Quality Check', 'Ready for Dispatch', 'Shipped', 'Delivered'],
+      enum: ['Order Received', 'Crafting in Progress', 'Quality Check', 'Packed', 'Shipped', 'Delivered'],
       default: 'Order Received',
     },
+    courierName: { type: String },
+    trackingNumber: { type: String },
+    dispatchDate: { type: Date },
+    expectedDeliveryDate: { type: Date },
+    shippingNotes: { type: String },
+    deliveryMethod: { type: String, enum: ['Courier', 'Local Delivery'] },
     paymentDate: { type: Date },
     cancellationDeadline: { type: Date },
     orderStatus: {

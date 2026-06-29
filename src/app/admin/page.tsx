@@ -23,6 +23,12 @@ type Order = {
   refundId?: string;
   refundDate?: string;
   cancellationReason?: string;
+  courierName?: string;
+  trackingNumber?: string;
+  dispatchDate?: string;
+  expectedDeliveryDate?: string;
+  shippingNotes?: string;
+  deliveryMethod?: string;
 };
 
 type Product = {
@@ -38,7 +44,7 @@ const STATUSES = [
   "Order Received",
   "Crafting in Progress",
   "Quality Check",
-  "Ready for Dispatch",
+  "Packed",
   "Shipped",
   "Delivered"
 ];
@@ -83,16 +89,33 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const handleOrderFieldChange = (orderId: string, field: string, value: string) => {
+    setOrders(orders.map(o => o.orderId === orderId ? { ...o, [field]: value } : o));
+  };
+
+  const updateOrderStatus = async (order: Order, newStatus: string) => {
+    if (newStatus === "Shipped" && (!order.courierName || !order.trackingNumber)) {
+      alert("Please provide Courier Name and Tracking Number before marking as Shipped.");
+      return;
+    }
     try {
       const res = await fetch("/api/admin/orders", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, trackingStatus: newStatus }),
+        body: JSON.stringify({ 
+          orderId: order.orderId, 
+          trackingStatus: newStatus,
+          courierName: order.courierName,
+          trackingNumber: order.trackingNumber,
+          dispatchDate: order.dispatchDate,
+          expectedDeliveryDate: order.expectedDeliveryDate,
+          shippingNotes: order.shippingNotes,
+          deliveryMethod: order.deliveryMethod
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        setOrders(orders.map(o => o.orderId === orderId ? { ...o, trackingStatus: newStatus } : o));
+        setOrders(orders.map(o => o.orderId === order.orderId ? { ...o, ...data.order } : o));
       } else {
         alert("Failed to update status");
       }
@@ -180,12 +203,76 @@ export default function AdminDashboard() {
                     </ul>
                     <p style={{ marginTop: "12px", fontWeight: "bold" }}>Total: ₹{order.totalAmount.toLocaleString('en-IN')}</p>
                   </div>
-                  <div style={{ minWidth: "200px" }}>
+                  <div style={{ minWidth: "280px", flex: "1 1 280px", background: "#FAF8F2", padding: "16px", borderRadius: "8px", border: "1px solid #E8DCC8" }}>
+                    <h4 style={{ margin: "0 0 12px 0", color: "#C9A227", fontSize: "14px", textTransform: "uppercase" }}>Shipping Details</h4>
+                    
+                    <div style={{ display: "grid", gap: "8px", marginBottom: "16px" }}>
+                      <select 
+                        value={order.deliveryMethod || ""} 
+                        onChange={(e) => handleOrderFieldChange(order.orderId, "deliveryMethod", e.target.value)}
+                        style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px" }}
+                        disabled={order.orderStatus === "Cancelled"}
+                      >
+                        <option value="">Select Delivery Method</option>
+                        <option value="Courier">Courier</option>
+                        <option value="Local Delivery">Local Delivery</option>
+                      </select>
+
+                      <input 
+                        type="text" 
+                        placeholder="Courier Name" 
+                        value={order.courierName || ""} 
+                        onChange={(e) => handleOrderFieldChange(order.orderId, "courierName", e.target.value)}
+                        style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px" }}
+                        disabled={order.orderStatus === "Cancelled"}
+                      />
+
+                      <input 
+                        type="text" 
+                        placeholder="Tracking Number / Delivery Reference" 
+                        value={order.trackingNumber || ""} 
+                        onChange={(e) => handleOrderFieldChange(order.orderId, "trackingNumber", e.target.value)}
+                        style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px" }}
+                        disabled={order.orderStatus === "Cancelled"}
+                      />
+
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: "10px", color: "#666" }}>Dispatch Date</label>
+                          <input 
+                            type="date" 
+                            value={order.dispatchDate ? new Date(order.dispatchDate).toISOString().split('T')[0] : ""} 
+                            onChange={(e) => handleOrderFieldChange(order.orderId, "dispatchDate", e.target.value)}
+                            style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px" }}
+                            disabled={order.orderStatus === "Cancelled"}
+                          />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: "10px", color: "#666" }}>Expected Delivery</label>
+                          <input 
+                            type="date" 
+                            value={order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toISOString().split('T')[0] : ""} 
+                            onChange={(e) => handleOrderFieldChange(order.orderId, "expectedDeliveryDate", e.target.value)}
+                            style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px" }}
+                            disabled={order.orderStatus === "Cancelled"}
+                          />
+                        </div>
+                      </div>
+
+                      <textarea 
+                        placeholder="Shipping Notes (Optional)"
+                        value={order.shippingNotes || ""}
+                        onChange={(e) => handleOrderFieldChange(order.orderId, "shippingNotes", e.target.value)}
+                        style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc", fontSize: "12px", minHeight: "50px" }}
+                        disabled={order.orderStatus === "Cancelled"}
+                      />
+                    </div>
+
                     <label style={{ display: "block", fontSize: "12px", fontWeight: "bold", marginBottom: "8px", textTransform: "uppercase" }}>Update Status</label>
                     <select 
                       value={order.trackingStatus} 
-                      onChange={(e) => updateOrderStatus(order.orderId, e.target.value)}
-                      style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }}
+                      onChange={(e) => updateOrderStatus(order, e.target.value)}
+                      style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", fontWeight: "bold" }}
                       disabled={order.orderStatus === "Cancelled"}
                     >
                       {STATUSES.map(s => (

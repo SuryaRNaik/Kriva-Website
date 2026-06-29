@@ -192,6 +192,47 @@ export default function MyOrdersPage() {
             </div>
 
             <div style={{ marginTop: "32px", borderTop: "1px solid #eee", paddingTop: "24px" }}>
+              <h3 style={{ margin: "0 0 16px 0", color: "#2B2B2B" }}>Tracking & Shipping</h3>
+              
+              {order.orderStatus !== 'Cancelled' ? (
+                <>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}>
+                    {['Order Received', 'Crafting in Progress', 'Quality Check', 'Packed', 'Shipped', 'Delivered'].map((step, index, array) => {
+                      const currentStepIndex = array.indexOf(order.trackingStatus);
+                      const isCompleted = index <= currentStepIndex;
+                      const isCurrent = index === currentStepIndex;
+                      return (
+                        <div key={step} style={{ display: "flex", alignItems: "center", gap: "12px", opacity: isCompleted ? 1 : 0.4 }}>
+                          <div style={{ 
+                            width: "20px", height: "20px", borderRadius: "50%", 
+                            background: isCompleted ? "#C9A227" : "#E8DCC8", 
+                            display: "flex", alignItems: "center", justifyContent: "center" 
+                          }}>
+                            {isCompleted && <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#fff" }} />}
+                          </div>
+                          <span style={{ fontWeight: isCurrent ? "bold" : "normal", color: "#2B2B2B" }}>{step}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {(order.courierName || order.trackingNumber || order.expectedDeliveryDate) && (
+                    <div style={{ background: "#FAF8F2", padding: "16px", borderRadius: "8px", border: "1px solid #E8DCC8" }}>
+                      {order.deliveryMethod && <p style={{ margin: "0 0 8px 0", fontSize: "14px" }}><strong>Delivery Method:</strong> {order.deliveryMethod}</p>}
+                      {order.courierName && <p style={{ margin: "0 0 8px 0", fontSize: "14px" }}><strong>Courier / Partner:</strong> {order.courierName}</p>}
+                      {order.trackingNumber && <p style={{ margin: "0 0 8px 0", fontSize: "14px" }}><strong>Tracking Number / Ref:</strong> {order.trackingNumber}</p>}
+                      {order.dispatchDate && <p style={{ margin: "0 0 8px 0", fontSize: "14px" }}><strong>Dispatch Date:</strong> {new Date(order.dispatchDate).toLocaleDateString()}</p>}
+                      {order.expectedDeliveryDate && <p style={{ margin: "0 0 8px 0", fontSize: "14px" }}><strong>Expected Delivery:</strong> {new Date(order.expectedDeliveryDate).toLocaleDateString()}</p>}
+                      {order.shippingNotes && <p style={{ margin: "0", fontSize: "14px" }}><strong>Notes:</strong> {order.shippingNotes}</p>}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p style={{ color: "#C62828" }}>Tracking unavailable for cancelled orders.</p>
+              )}
+            </div>
+
+            <div style={{ marginTop: "32px", borderTop: "1px solid #eee", paddingTop: "24px" }}>
               <h3 style={{ margin: "0 0 12px 0", color: "#2B2B2B" }}>Cancellation & Refunds</h3>
               {renderCancellationStatus()}
             </div>
