@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CheckCircle } from "lucide-react";
+import { useStore } from "@/context/StoreContext";
 
 export default function SuccessPage() {
   const [orderDetails, setOrderDetails] = useState<{orderId: string, email: string} | null>(null);
+  const { clearCart } = useStore();
 
   useEffect(() => {
     // Retrieve mock order details
@@ -14,8 +16,9 @@ export default function SuccessPage() {
       setOrderDetails(JSON.parse(data));
       // Clean up after displaying
       localStorage.removeItem("kriva_last_order");
+      clearCart();
     }
-  }, []);
+  }, [clearCart]);
 
   return (
     <div className="min-h-screen pt-32 pb-20 bg-[#FAF8F2] flex items-center justify-center px-6">

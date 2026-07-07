@@ -19,7 +19,7 @@ export const SERVER_PRODUCTS: Record<string, { price: number }> = {
   "dress-maxi": { price: 2000 },
   
   // Best Sellers (matches above)
-  "dress-1": { price: 2500 },
+  "dress-1": { price: 2 },
   "dress-2": { price: 3200 },
   "dress-3": { price: 2800 },
   "dress-4": { price: 2000 },

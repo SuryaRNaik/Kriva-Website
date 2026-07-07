@@ -38,7 +38,7 @@ export const MOCK_SHOP_DATA: Record<string, ShopProduct[]> = {
   "suit-sets": [
     { id: "suit-1", title: "Blush Anarkali Suit", subtitle: "Flowing hand-painted elegance", price: 8500, originalPrice: 10500, rating: 4.9, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
     { id: "suit-2", title: "Ivory Straight Cut Suit", subtitle: "Minimalist luxury everyday wear", price: 7200, originalPrice: null, rating: 4.8, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
-    { id: "suit-3", title: "Pastel Mint Sharara", subtitle: "Festive aesthetic with hand art", price: 9800, originalPrice: 12000, rating: 5.0, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
+    { id: "suit-3", title: "Pastel Mint Sharara", subtitle: "Festive aesthetic with hand art", price: 9800, originalPrice: 1, rating: 5.0, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
     { id: "suit-4", title: "Maroon Velvet Suit", subtitle: "Rich tones with subtle hand-paint", price: 11000, originalPrice: null, rating: 4.7, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
     { id: "suit-5", title: "Mustard Yellow Suit", subtitle: "Vibrant traditional motifs", price: 7500, originalPrice: 9000, rating: 4.8, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
     { id: "suit-6", title: "Lavender Suit Set", subtitle: "Soft pastel luxury outfit", price: 8200, originalPrice: null, rating: 4.9, image: "/images/mockup_suit.png", soldOut: true, isNew: false },

@@ -110,7 +110,8 @@ export default function AdminDashboard() {
           dispatchDate: order.dispatchDate,
           expectedDeliveryDate: order.expectedDeliveryDate,
           shippingNotes: order.shippingNotes,
-          deliveryMethod: order.deliveryMethod
+          deliveryMethod: order.deliveryMethod,
+          refundStatus: order.refundStatus
         }),
       });
       const data = await res.json();
@@ -192,7 +193,21 @@ export default function AdminDashboard() {
                       <div style={{ background: "#FFEBEE", padding: "12px", borderRadius: "8px", marginBottom: "16px" }}>
                         <p style={{ margin: 0, color: "#C62828", fontWeight: "bold" }}>CANCELLED</p>
                         <p style={{ margin: "4px 0", fontSize: "14px", color: "#C62828" }}>Reason: {order.cancellationReason}</p>
-                        <p style={{ margin: "4px 0", fontSize: "14px", color: "#C62828" }}>Refund: {order.refundStatus} ({order.refundId})</p>
+                        <div style={{ marginTop: "8px" }}>
+                          <label style={{ fontSize: "12px", color: "#C62828", fontWeight: "bold", display: "block", marginBottom: "4px" }}>Refund Status:</label>
+                          <select
+                            value={order.refundStatus || "None"}
+                            onChange={(e) => handleOrderFieldChange(order.orderId, "refundStatus", e.target.value)}
+                            style={{ width: "100%", padding: "6px", borderRadius: "4px", border: "1px solid #C62828", background: "#fff", fontSize: "12px" }}
+                          >
+                            <option value="None">None</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Initiated">Initiated</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Failed">Failed</option>
+                          </select>
+                        </div>
+                        {order.refundId && <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#C62828" }}>Ref: {order.refundId}</p>}
                       </div>
                     )}
                     <h4 style={{ margin: "0 0 8px 0" }}>Items</h4>

@@ -28,6 +28,8 @@ export interface IOrder extends Document {
   refundId?: string;
   refundDate?: Date;
   cancellationReason?: string;
+  cancelledAt?: Date;
+  cancelledBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,12 +70,17 @@ const OrderSchema: Schema = new Schema(
     },
     refundStatus: {
       type: String,
-      enum: ['None', 'Processed', 'Failed'],
+      enum: ['None', 'Pending', 'Initiated', 'Completed', 'Failed'],
       default: 'None',
     },
     refundId: { type: String },
     refundDate: { type: Date },
     cancellationReason: { type: String },
+    cancelledAt: { type: Date },
+    cancelledBy: { 
+      type: String, 
+      enum: ['Customer', 'Admin'] 
+    },
   },
   { timestamps: true }
 );

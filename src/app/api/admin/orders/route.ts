@@ -24,7 +24,8 @@ export async function PUT(req: Request) {
       dispatchDate,
       expectedDeliveryDate,
       shippingNotes,
-      deliveryMethod
+      deliveryMethod,
+      refundStatus
     } = await req.json();
     
     if (!orderId || !trackingStatus) {
@@ -44,7 +45,7 @@ export async function PUT(req: Request) {
       finalDispatchDate = new Date();
     }
 
-    const updateFields = {
+    const updateFields: any = {
       trackingStatus,
       courierName,
       trackingNumber,
@@ -53,6 +54,10 @@ export async function PUT(req: Request) {
       shippingNotes,
       deliveryMethod
     };
+
+    if (refundStatus !== undefined) {
+      updateFields.refundStatus = refundStatus;
+    }
 
     const order = await Order.findOneAndUpdate(
       { orderId },

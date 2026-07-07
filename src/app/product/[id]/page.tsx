@@ -72,7 +72,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (product.soldOut) return;
     addToCart({
-      id: `${product.id}-${selectedSize}`,
+      id: product.id,
       title: product.title,
       subtitle: `Size: ${selectedSize}`,
       price: "₹" + product.price.toLocaleString("en-IN"),

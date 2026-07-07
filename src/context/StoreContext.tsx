@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { Toaster, toast } from 'react-hot-toast';
 
 export type Product = {
   id: string;
@@ -64,6 +65,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prevCart, { ...product, quantity: quantityToAdd }];
     });
+    
+    toast.success("Added to cart", {
+      style: {
+        background: '#22c55e', // Green color
+        color: '#fff',
+        fontWeight: '500'
+      },
+      iconTheme: {
+        primary: '#fff',
+        secondary: '#22c55e',
+      },
+    });
   };
 
   const removeFromCart = (productId: string) => {
@@ -118,6 +131,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         clearCart,
       }}
     >
+      <Toaster position="bottom-center" toastOptions={{ duration: 3000 }} />
       {children}
     </StoreContext.Provider>
   );

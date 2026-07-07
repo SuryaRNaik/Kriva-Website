@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Order from "@/models/Order";
+import Customer from "@/models/Customer";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectDB();
+    const customer = await Customer.findOne({ email: session.user.email });
+    if (!customer) {
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+    }
+
+    const orders = await Order.find({ customer: customer._id }).sort({ createdAt: -1 });
+
+    return NextResponse.json({ success: true, orders }, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
 export async function POST(req: Request) {
   try {

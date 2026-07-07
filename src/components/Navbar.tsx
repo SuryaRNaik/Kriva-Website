@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, ShoppingBag, Heart, User } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
+import { useSession } from "next-auth/react";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -17,6 +18,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const { cartCount, favorites } = useStore();
+  const { status } = useSession();
 
   const handleScroll = useCallback(() => {
     setIsScrolled(window.scrollY > 40);
@@ -101,8 +103,8 @@ export default function Navbar() {
             </Link>
             
             <Link
-              href="/login"
-              aria-label="User Login"
+              href={status === "authenticated" ? "/profile" : "/login"}
+              aria-label="User Account"
               className="p-2 text-[#8A8070] hover:text-[#C9A227] transition-colors"
             >
               <User size={20} />
@@ -191,7 +193,7 @@ export default function Navbar() {
                 )}
               </Link>
               <Link
-                href="/login"
+                href={status === "authenticated" ? "/profile" : "/login"}
                 onClick={() => setMenuOpen(false)}
                 className="p-3 bg-[#F5F0E6] text-[#C9A227] rounded-full"
               >

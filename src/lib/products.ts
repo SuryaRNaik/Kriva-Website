@@ -40,7 +40,7 @@ function generateGallery(mainImage: string): string[] {
 
 const rawProducts = [
   // ── Best Sellers / Fabric Art ──
-  { id: "dress-1", title: "Blossom Hand-Painted Dress", subtitle: "Floral art on premium fabric", category: "Fabric Art", categorySlug: "fabric-art", price: 2500, originalPrice: 3500, rating: 4.8, image: "/images/bestseller_1.png", soldOut: false, isNew: false },
+  { id: "dress-1", title: "Blossom Hand-Painted Dress", subtitle: "Floral art on premium fabric", category: "Fabric Art", categorySlug: "fabric-art", price: 2, originalPrice: 3500, rating: 4.8, image: "/images/bestseller_1.png", soldOut: false, isNew: false },
   { id: "dress-2", title: "Geometric Rose Gown", subtitle: "Intricate motif detailing", category: "Fabric Art", categorySlug: "fabric-art", price: 3200, originalPrice: 4200, rating: 4.9, image: "/images/bestseller_2.png", soldOut: false, isNew: false },
   { id: "dress-3", title: "Pink Blossom Anarkali", subtitle: "Traditional ethnic hand-painted anarkali", category: "Fabric Art", categorySlug: "fabric-art", price: 2800, originalPrice: 3800, rating: 4.8, image: "/images/bestseller_3.png", soldOut: false, isNew: false },
   { id: "dress-4", title: "Artisan Maxi Dress", subtitle: "Rich artistic motifs on flowing maxi", category: "Fabric Art", categorySlug: "fabric-art", price: 2000, originalPrice: 3000, rating: 4.7, image: "/images/bestseller_4.png", soldOut: false, isNew: false },
@@ -77,13 +77,13 @@ const rawProducts = [
   { id: "leh-2", title: "Pastel Bloom Lehenga", subtitle: "Soft pinks and ivory detailing", category: "Lehengas", categorySlug: "lehengas", price: 22000, originalPrice: null, rating: 4.9, image: "/images/mockup_lehenga.png", soldOut: false, isNew: false },
   { id: "leh-3", title: "Mint Green Lehenga", subtitle: "Elegant aesthetic for day weddings", category: "Lehengas", categorySlug: "lehengas", price: 24500, originalPrice: 27000, rating: 4.8, image: "/images/mockup_lehenga.png", soldOut: false, isNew: false },
   { id: "leh-4", title: "Deep Maroon Lehenga", subtitle: "Classic bridal hand-painted luxury", category: "Lehengas", categorySlug: "lehengas", price: 35000, originalPrice: null, rating: 5.0, image: "/images/mockup_lehenga.png", soldOut: false, isNew: true },
-  { id: "leh-5", title: "Ivory Pearl Lehenga", subtitle: "Subtle hand-painted motifs on white", category: "Lehengas", categorySlug: "lehengas", price: 28000, originalPrice: 32000, rating: 4.9, image: "/images/mockup_lehenga.png", soldOut: false, isNew: false },
+  { id: "leh-5", title: "Ivory Pearl Lehenga", subtitle: "Subtle hand-painted motifs on white", category: "Lehengas", categorySlug: "lehengas", price: 28000, originalPrice: 3, rating: 4.9, image: "/images/mockup_lehenga.png", soldOut: false, isNew: false },
   { id: "leh-6", title: "Lavender Dream Lehenga", subtitle: "Ethereal aesthetic flow", category: "Lehengas", categorySlug: "lehengas", price: 26500, originalPrice: null, rating: 4.8, image: "/images/mockup_lehenga.png", soldOut: true, isNew: false },
 
   // ── Suit Sets ──
   { id: "suit-1", title: "Blush Anarkali Suit", subtitle: "Flowing hand-painted elegance", category: "Suit Sets", categorySlug: "suit-sets", price: 8500, originalPrice: 10500, rating: 4.9, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
   { id: "suit-2", title: "Ivory Straight Cut Suit", subtitle: "Minimalist luxury everyday wear", category: "Suit Sets", categorySlug: "suit-sets", price: 7200, originalPrice: null, rating: 4.8, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
-  { id: "suit-3", title: "Pastel Mint Sharara", subtitle: "Festive aesthetic with hand art", category: "Suit Sets", categorySlug: "suit-sets", price: 9800, originalPrice: 12000, rating: 5.0, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
+  { id: "suit-3", title: "Pastel Mint Sharara", subtitle: "Festive aesthetic with hand art", category: "Suit Sets", categorySlug: "suit-sets", price: 9800, originalPrice: 1, rating: 5.0, image: "/images/mockup_suit.png", soldOut: false, isNew: true },
   { id: "suit-4", title: "Maroon Velvet Suit", subtitle: "Rich tones with subtle hand-paint", category: "Suit Sets", categorySlug: "suit-sets", price: 11000, originalPrice: null, rating: 4.7, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
   { id: "suit-5", title: "Mustard Yellow Suit", subtitle: "Vibrant traditional motifs", category: "Suit Sets", categorySlug: "suit-sets", price: 7500, originalPrice: 9000, rating: 4.8, image: "/images/mockup_suit.png", soldOut: false, isNew: false },
   { id: "suit-6", title: "Lavender Suit Set", subtitle: "Soft pastel luxury outfit", category: "Suit Sets", categorySlug: "suit-sets", price: 8200, originalPrice: null, rating: 4.9, image: "/images/mockup_suit.png", soldOut: true, isNew: false },

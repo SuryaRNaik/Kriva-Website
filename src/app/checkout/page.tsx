@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { useStore } from "@/context/StoreContext";
+import { useSession } from "next-auth/react";
 import BackButton from "@/components/BackButton";
 import type { CustomerDetails, RazorpayOptions, CreateOrderResponse } from "@/types/payment";
 
@@ -12,6 +13,7 @@ export default function CheckoutPage() {
   const { cart, cartTotal, clearCart } = useStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const [customer, setCustomer] = useState<CustomerDetails>({
     name: "",
@@ -22,12 +24,44 @@ export default function CheckoutPage() {
     pincode: "",
   });
 
-  // Redirect to cart if empty
+  const { data: session, status } = useSession();
+  const [savedProfile, setSavedProfile] = useState<any>(null);
+
   useEffect(() => {
-    if (cart.length === 0) {
+    if (status === "authenticated") {
+      fetch("/api/customer/profile")
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.customer) {
+            setSavedProfile(data.customer);
+            setCustomer(prev => ({
+              ...prev,
+              name: prev.name || data.customer.name || "",
+              email: prev.email || data.customer.email || "",
+            }));
+          }
+        })
+        .catch(err => console.error("Error fetching profile", err));
+    }
+  }, [status]);
+
+  const useSavedAddress = () => {
+    if (savedProfile) {
+      setCustomer({
+        name: savedProfile.name || "",
+        email: savedProfile.email || "",
+        phone: savedProfile.phone || "",
+        address: savedProfile.address || "",
+        city: savedProfile.city || "",
+        pincode: savedProfile.pincode || "",
+      });
+    }
+  };
+  useEffect(() => {
+    if (cart.length === 0 && !isSuccess) {
       router.push("/cart");
     }
-  }, [cart, router]);
+  }, [cart, router, isSuccess]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -104,7 +138,7 @@ export default function CheckoutPage() {
             const verifyData = await verifyRes.json();
 
             if (verifyRes.ok && verifyData.success) {
-              clearCart();
+              setIsSuccess(true);
               // Store basic order info for success page (mock DB)
               localStorage.setItem("kriva_last_order", JSON.stringify({
                 orderId: verifyData.orderId,
@@ -128,9 +162,9 @@ export default function CheckoutPage() {
       };
 
       const rzp = new (window as any).Razorpay(options);
-      rzp.on('payment.failed', function () {
+      rzp.on('payment.failed', function (response: any) {
+        console.warn("Payment attempt failed:", response.error?.description || "Unknown error");
         setIsProcessing(false);
-        router.push("/failure");
       });
       rzp.open();
 
@@ -165,9 +199,19 @@ export default function CheckoutPage() {
           {/* Checkout Form */}
           <div className="lg:w-2/3">
             <div className="bg-white rounded-2xl shadow-sm border border-[#E8DCC8] p-6 md:p-8">
-              <h2 className="text-xl font-bold text-[#2B2B2B] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
-                Shipping Details
-              </h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-[#2B2B2B]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  Shipping Details
+                </h2>
+                {savedProfile && savedProfile.address && (
+                  <button 
+                    onClick={useSavedAddress}
+                    className="text-sm font-semibold text-[#C9A227] hover:underline"
+                  >
+                    Use Saved Address
+                  </button>
+                )}
+              </div>
 
               <form id="checkout-form" onSubmit={handlePayment} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
