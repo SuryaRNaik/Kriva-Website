@@ -8,6 +8,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    // Session and email validated
     if (!session || !session.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -18,7 +19,7 @@ export async function GET() {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    const orders = await Order.find({ customer: customer._id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ customer: customer._id }).sort({ createdAt: -1 }).lean();
 
     return NextResponse.json({ success: true, orders }, { status: 200 });
   } catch (error) {

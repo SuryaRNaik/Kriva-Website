@@ -5,12 +5,12 @@ import Link from "next/link";
 import { Heart, ShoppingBag } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 
-import { ALL_PRODUCTS } from "@/lib/products";
+import { Product } from "@/lib/products";
 
-const bestSellers = ALL_PRODUCTS.slice(0, 4);
-
-export default function BestSellers() {
+export default function BestSellers({ products }: { products: Product[] }) {
   const { addToCart, toggleFavorite, isFavorite } = useStore();
+
+  const bestSellers = products;
 
   return (
     <section id="bestsellers" className="py-20 bg-white">

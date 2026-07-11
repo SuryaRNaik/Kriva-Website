@@ -103,9 +103,9 @@ export default function LoginPage() {
                   <label className="block text-xs font-semibold text-[#444] uppercase tracking-wide">
                     Password
                   </label>
-                  <a href="#" className="text-xs text-[#C9A227] hover:underline font-medium" onClick={(e) => { e.preventDefault(); toast("Password reset will be sent to your email. (Coming Soon!)", { icon: "📧" }); }}>
+                  <Link href="/forgot-password" className="text-xs text-[#C9A227] hover:underline font-medium">
                     Forgot Password?
-                  </a>
+                  </Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8A8070]" size={18} />

@@ -2,11 +2,18 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Order from "@/models/Order";
 import Customer from "@/models/Customer";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
-    const orders = await Order.find().populate('customer').sort({ createdAt: -1 });
+    const orders = await Order.find().populate('customer').sort({ createdAt: -1 }).lean();
     return NextResponse.json({ success: true, orders });
   } catch (error: any) {
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
@@ -15,6 +22,11 @@ export async function GET(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (session?.user?.role !== "admin") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     await connectDB();
     const { 
       orderId, 
@@ -25,7 +37,15 @@ export async function PUT(req: Request) {
       expectedDeliveryDate,
       shippingNotes,
       deliveryMethod,
-      refundStatus
+      refundStatus,
+      shippingMode,
+      dispatchTime,
+      courierContact,
+      pickupLocation,
+      adminNotes,
+      deliveredBy,
+      receivedBy,
+      deliveryRemarks
     } = await req.json();
     
     if (!orderId || !trackingStatus) {
@@ -37,10 +57,15 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
+    const parseDate = (val: any) => {
+      if (!val || String(val).trim() === "") return null;
+      return new Date(val);
+    };
+
     const previousStatus = existingOrder.trackingStatus;
     
     // Auto-set dispatchDate if changing to Shipped
-    let finalDispatchDate = dispatchDate;
+    let finalDispatchDate = parseDate(dispatchDate);
     if (trackingStatus === 'Shipped' && !finalDispatchDate) {
       finalDispatchDate = new Date();
     }
@@ -50,8 +75,16 @@ export async function PUT(req: Request) {
       courierName,
       trackingNumber,
       dispatchDate: finalDispatchDate,
-      expectedDeliveryDate,
+      dispatchTime,
+      expectedDeliveryDate: parseDate(expectedDeliveryDate),
       shippingNotes,
+      shippingMode,
+      courierContact,
+      pickupLocation,
+      adminNotes,
+      deliveredBy,
+      receivedBy,
+      deliveryRemarks,
       deliveryMethod
     };
 

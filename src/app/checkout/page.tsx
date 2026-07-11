@@ -79,6 +79,25 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
+      // 0. Validate stock before proceeding
+      const { validateCartStock } = await import("@/actions/stock");
+      const itemsToCheck = cart.map(item => ({ id: item.id, quantity: item.quantity }));
+      const validationResults = await validateCartStock(itemsToCheck);
+      
+      let allValid = true;
+      for (const result of validationResults) {
+        if (!result.valid) {
+          allValid = false;
+          alert(`Stock issue with one of your items: ${result.error}. Please check your cart.`);
+        }
+      }
+
+      if (!allValid) {
+        setIsProcessing(false);
+        router.push("/cart");
+        return;
+      }
+
       // 1. Create order on backend
       const amountInPaise = cartTotal * 100;
       

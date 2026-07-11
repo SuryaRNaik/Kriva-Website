@@ -42,21 +42,8 @@ export default function SignupPage() {
         throw new Error(data.error || "Failed to sign up");
       }
 
-      toast.success(data.message || "Account created successfully!");
-      
-      // Auto-login after successful signup
-      const loginRes = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (loginRes?.error) {
-        toast.error("Failed to auto-login. Please login manually.");
-        router.push("/login");
-      } else {
-        router.push("/");
-      }
+      toast.success(data.message || "Account created successfully! Please check your email.");
+      router.push("/login");
 
     } catch (error: any) {
       toast.error(error.message);

@@ -6,7 +6,7 @@ import BackButton from "@/components/BackButton";
 import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
-import { PackageX, PackageSearch, PackageCheck, Clock, CheckCircle2, Truck, Box, Package } from "lucide-react";
+import { PackageX, PackageSearch, PackageCheck, Clock, CheckCircle2, Truck, Box, Package, Copy } from "lucide-react";
 
 export default function MyOrdersPage() {
   const { data: session, status } = useSession();
@@ -157,14 +157,18 @@ export default function MyOrdersPage() {
     }
 
     const steps = [
-      { id: "Order Received", icon: Box },
+      { id: "Received", icon: Box },
       { id: "Preparing", icon: Clock },
+      { id: "Packed", icon: Package },
       { id: "Shipped", icon: Truck },
       { id: "Delivered", icon: CheckCircle2 }
     ];
 
-    let currentIndex = steps.findIndex(s => s.id === currentStatus);
-    if (currentIndex === -1) currentIndex = 0; // Default
+    let currentIndex = 0;
+    if (currentStatus === "Crafting in Progress" || currentStatus === "Quality Check") currentIndex = 1;
+    else if (currentStatus === "Packed") currentIndex = 2;
+    else if (currentStatus === "Shipped") currentIndex = 3;
+    else if (currentStatus === "Delivered") currentIndex = 4;
 
     return (
       <div className="flex items-center justify-between mt-6 mb-2">
@@ -203,6 +207,12 @@ export default function MyOrdersPage() {
     const canCancel = !isPastDeadline && !isCrafting && !isCancelled;
     const remainingHours = Math.max(0, Math.floor((deadline.getTime() - now.getTime()) / (1000 * 60 * 60)));
 
+    const formatPrice = (price: string | number) => {
+      if (typeof price === 'number') return price.toLocaleString('en-IN');
+      const num = Number(price.replace(/[^0-9.-]+/g,""));
+      return num.toLocaleString('en-IN');
+    };
+
     return (
       <div key={o._id} className="bg-white rounded-2xl shadow-sm border border-[#E8DCC8] p-6 hover:shadow-md transition-shadow">
         
@@ -239,10 +249,70 @@ export default function MyOrdersPage() {
                   {item.size && <span>Size: <strong className="text-[#444]">{item.size}</strong></span>}
                 </div>
               </div>
-              <div className="font-bold text-[#444]">₹{item.price}</div>
+              <div className="font-bold text-[#444]">₹{formatPrice(item.price)}</div>
             </div>
           ))}
         </div>
+
+        {/* Shipping Details */}
+        {(o.trackingStatus === "Packed" || o.trackingStatus === "Shipped" || o.trackingStatus === "Delivered") && (
+          <div className="mt-6 bg-[#FAF8F2] rounded-xl border border-[#E8DCC8] p-4 text-sm">
+            <h4 className="font-bold text-[#2B2B2B] mb-3 uppercase tracking-wider text-xs">Shipping Details</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Shipping Mode</p>
+                <p className="font-medium text-[#2B2B2B]">{o.shippingMode || 'Not updated yet'}</p>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Courier Name</p>
+                <p className="font-medium text-[#2B2B2B]">{o.courierName || 'Not updated yet'}</p>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Courier Contact</p>
+                <p className="font-medium text-[#2B2B2B]">{o.courierContact || 'Not updated yet'}</p>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Tracking No</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-[#2B2B2B]">{o.trackingNumber || 'Not updated yet'}</p>
+                  {o.trackingNumber && (
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(o.trackingNumber);
+                        toast.success("Tracking number copied!");
+                      }}
+                      className="text-[#8A8070] hover:text-[#C9A227] transition-colors"
+                      title="Copy Tracking Number"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Dispatched</p>
+                <p className="font-medium text-[#2B2B2B]">
+                  {o.dispatchDate ? new Date(o.dispatchDate).toLocaleDateString() : 'Not updated yet'}
+                  {o.dispatchTime ? ` at ${o.dispatchTime}` : ''}
+                </p>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Expected Delivery</p>
+                <p className="font-medium text-[#2B2B2B]">{o.expectedDeliveryDate ? new Date(o.expectedDeliveryDate).toLocaleDateString() : 'Not updated yet'}</p>
+              </div>
+              <div>
+                <p className="text-[#8A8070] text-xs font-bold uppercase">Pickup Location</p>
+                <p className="font-medium text-[#2B2B2B]">{o.pickupLocation || 'Not updated yet'}</p>
+              </div>
+            </div>
+            {o.shippingNotes && (
+              <div className="mt-4 pt-3 border-t border-[#E8DCC8]">
+                <p className="text-[#8A8070] text-xs font-bold uppercase mb-1">Notes</p>
+                <p className="text-[#5A5548] text-sm">{o.shippingNotes}</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Timeline */}
         <div className="my-8 px-2">

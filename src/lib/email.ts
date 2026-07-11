@@ -27,7 +27,7 @@ export const sendEmail = async ({ to, subject, html }: SendEmailParams) => {
       subject,
       html,
     });
-    console.log("Message sent: %s", info.messageId);
+    // Message sent info removed
     return true;
   } catch (error) {
     console.error("Error sending email:", error);
@@ -476,3 +476,32 @@ export const getDeliveryConfirmationHtml = (
     </div>
   `;
 };
+
+export const getVerificationEmailHtml = (token: string) => {
+  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <h2 style="color: #2B2B2B; text-align: center;">Welcome to Kriva Studio!</h2>
+      <p style="font-size: 16px; text-align: center;">Thank you for creating an account. Please verify your email address to activate your account.</p>
+      <div style="text-align: center; margin-top: 25px;">
+        <a href="${verifyUrl}" style="display: inline-block; padding: 12px 24px; background-color: #C9A227; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Verify Email</a>
+      </div>
+      <p style="margin-top: 25px; font-size: 12px; color: #666; text-align: center;">If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+};
+
+export const getPasswordResetEmailHtml = (token: string) => {
+  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+  return `
+    <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
+      <h2 style="color: #2B2B2B; text-align: center;">Password Reset Request</h2>
+      <p style="font-size: 16px; text-align: center;">We received a request to reset your password. Click the button below to choose a new password.</p>
+      <div style="text-align: center; margin-top: 25px;">
+        <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #C9A227; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Reset Password</a>
+      </div>
+      <p style="margin-top: 25px; font-size: 12px; color: #666; text-align: center;">If you did not request a password reset, please ignore this email.</p>
+    </div>
+  `;
+};
+

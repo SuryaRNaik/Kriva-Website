@@ -18,8 +18,16 @@ export interface IOrder extends Document {
   courierName?: string;
   trackingNumber?: string;
   dispatchDate?: Date;
+  dispatchTime?: string;
   expectedDeliveryDate?: Date;
   shippingNotes?: string;
+  shippingMode?: string;
+  courierContact?: string;
+  pickupLocation?: string;
+  adminNotes?: string;
+  deliveredBy?: string;
+  receivedBy?: string;
+  deliveryRemarks?: string;
   deliveryMethod?: string;
   paymentDate: Date;
   cancellationDeadline: Date;
@@ -58,8 +66,16 @@ const OrderSchema: Schema = new Schema(
     courierName: { type: String },
     trackingNumber: { type: String },
     dispatchDate: { type: Date },
+    dispatchTime: { type: String },
     expectedDeliveryDate: { type: Date },
     shippingNotes: { type: String },
+    shippingMode: { type: String },
+    courierContact: { type: String },
+    pickupLocation: { type: String },
+    adminNotes: { type: String },
+    deliveredBy: { type: String },
+    receivedBy: { type: String },
+    deliveryRemarks: { type: String },
     deliveryMethod: { type: String, enum: ['Courier', 'Local Delivery'] },
     paymentDate: { type: Date },
     cancellationDeadline: { type: Date },

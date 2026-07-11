@@ -82,13 +82,13 @@ export async function POST(req: Request) {
           }
 
           // Atomically decrement stock
-          console.log("Incoming Item =", item);
+          // Incoming Item: item
           const product = await Product.findOneAndUpdate(
             { id: item.id, stock: { $gte: item.quantity } },
             { $inc: { stock: -item.quantity } },
             { new: false } // Returns document before update
           );
-          console.log("Found Product =", product);
+          // Found Product: product
           if (!product) {
             throw new Error(`Product ${item.id} is out of stock or insufficient quantity`);
           }
@@ -101,20 +101,15 @@ export async function POST(req: Request) {
         if (!workshop) throw new Error(`Workshop not found: ${workshopDetails.title}`);
         expectedAmount = workshop.price;
       }
-      console.log("========== AMOUNT DEBUG ==========");
-      console.log("Razorpay Amount:", rzpOrder.amount);
-      console.log("Expected Amount:", expectedAmount);
-      console.log("Expected Paise:", expectedAmount * 100);
-      console.log("==================================");
+      // Amount validation logs removed
 
       if (rzpOrder.amount !== expectedAmount * 100) {
         throw new Error("Amount mismatch detected. Security validation failed.");
       }
     } catch (validationError: any) {
       // Rollback reserved stock
-      console.log("========== VALIDATION ERROR ==========");
-      console.log(validationError.message);
-      console.log(validationError);
+      console.error("========== VALIDATION ERROR ==========");
+      console.error(validationError.message);
 
       for (const res of reservedItems) {
         await Product.findOneAndUpdate({ id: res.id }, { $inc: { stock: res.quantity } });
@@ -130,7 +125,7 @@ export async function POST(req: Request) {
     } catch (captureError: any) {
       const errorStr = captureError?.error?.description || captureError?.message || JSON.stringify(captureError);
       if (errorStr && typeof errorStr === 'string' && (errorStr.includes("already been captured") || errorStr.includes("already captured"))) {
-        console.log("Payment was already auto-captured by Razorpay (expected condition).");
+        // Payment was already auto-captured by Razorpay (expected condition).
       } else {
         console.error("Payment capture failed:", captureError);
       }

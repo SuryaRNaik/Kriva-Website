@@ -12,7 +12,7 @@ export async function GET() {
     }
 
     await connectDB();
-    const customer = await Customer.findOne({ email: session.user.email }).select("-password");
+    const customer = await Customer.findOne({ email: session.user.email }).select("-password -verifyToken -verifyTokenExpiry -resetToken -resetTokenExpiry -failedLoginAttempts -lockUntil");
     
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });
@@ -39,7 +39,7 @@ export async function PUT(req: Request) {
       { email: session.user.email },
       { phone, address, city, pincode },
       { new: true }
-    ).select("-password");
+    ).select("-password -verifyToken -verifyTokenExpiry -resetToken -resetTokenExpiry -failedLoginAttempts -lockUntil");
 
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 });

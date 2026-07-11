@@ -1,13 +1,54 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Trash2, Plus, Minus, ArrowRight } from "lucide-react";
 import { useStore } from "@/context/StoreContext";
 import BackButton from "@/components/BackButton";
+import { validateCartStock } from "@/actions/stock";
+import { toast } from "react-hot-toast";
 
 export default function CartPage() {
   const { cart, removeFromCart, updateQuantity, cartTotal } = useStore();
+  const router = useRouter();
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleCheckout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (cart.length === 0) return;
+    
+    setIsValidating(true);
+    try {
+      const itemsToCheck = cart.map(item => ({ id: item.id, quantity: item.quantity }));
+      const validationResults = await validateCartStock(itemsToCheck);
+      
+      let allValid = true;
+      for (const result of validationResults) {
+        if (!result.valid) {
+          allValid = false;
+          const item = cart.find(c => c.id === result.id);
+          toast.error(`${item?.title || "Product"}: ${result.error}`, {
+            duration: 5000,
+          });
+          if (result.availableStock !== undefined) {
+            updateQuantity(result.id, result.availableStock);
+          } else if (result.availableStock === 0 || result.error === "Product not found") {
+            removeFromCart(result.id);
+          }
+        }
+      }
+
+      if (allValid) {
+        router.push("/checkout");
+      }
+    } catch (error) {
+      toast.error("Failed to validate stock. Please try again.");
+    } finally {
+      setIsValidating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen pt-28 pb-20 bg-[#FAF8F2]">
@@ -146,13 +187,14 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <Link
-                  href="/checkout"
-                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-[#2B2B2B] font-bold shadow-gold hover:opacity-90 transition-all duration-300 transform active:scale-[0.98]"
+                <button
+                  onClick={handleCheckout}
+                  disabled={isValidating}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-[#2B2B2B] font-bold shadow-gold hover:opacity-90 transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50"
                   style={{ background: "linear-gradient(135deg, #F0D97A 0%, #C9A227 50%, #A07830 100%)" }}
                 >
-                  Proceed to Checkout <ArrowRight size={18} />
-                </Link>
+                  {isValidating ? "Checking Stock..." : "Proceed to Checkout"} <ArrowRight size={18} />
+                </button>
 
                 <div className="mt-6 text-center">
                   <p className="text-xs text-[#8A8070] flex items-center justify-center gap-1.5">
