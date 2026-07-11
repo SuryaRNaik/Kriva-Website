@@ -4,6 +4,7 @@ import Order from "@/models/Order";
 import Customer from "@/models/Customer";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { fetchOrderSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -30,14 +31,23 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { email, orderId } = await req.json();
-
-    if (!email || !orderId) {
+    const body = await req.json();
+    const result = fetchOrderSchema.safeParse(body);
+    
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: "Email and Order ID are required" },
+        { success: false, error: result.error.issues[0].message },
         { status: 400 }
       );
     }
+    
+    const { orderId } = result.data;
+
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const sessionEmail = session.user.email;
 
     await connectDB();
 
@@ -51,7 +61,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (order.customer.email.toLowerCase() !== email.toLowerCase()) {
+    if (order.customer.email.toLowerCase() !== sessionEmail.toLowerCase()) {
       return NextResponse.json(
         { success: false, error: "Order not found or email mismatch" },
         { status: 404 }

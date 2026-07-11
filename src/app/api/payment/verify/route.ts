@@ -15,10 +15,36 @@ import WorkshopRegistration from "@/models/WorkshopRegistration";
 import Product from "@/models/Product";
 import { SERVER_WORKSHOPS } from "@/lib/server-products";
 import { addWorkingDays } from "@/lib/date-utils";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyPaymentSchema, sanitizeStrict } from "@/lib/validation";
+import { logEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
+  // Verify Payment rate limiting: 10 requests / 15 minutes
+  const rlResponse = await checkRateLimit(req, "verify-payment", 10, 15);
+  if (rlResponse) return rlResponse;
+
   try {
-    const body: VerifyPaymentPayload = await req.json();
+    const rawBody = await req.json();
+    const result = verifyPaymentSchema.safeParse(rawBody);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+    
+    const body = result.data;
+    
+    // Sanitize customer details strings
+    body.customerDetails.name = sanitizeStrict(body.customerDetails.name);
+    body.customerDetails.address = sanitizeStrict(body.customerDetails.address);
+    body.customerDetails.city = sanitizeStrict(body.customerDetails.city);
+    body.customerDetails.pincode = sanitizeStrict(body.customerDetails.pincode);
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -29,13 +55,6 @@ export async function POST(req: Request) {
       workshopDetails,
     } = body;
     let { totalAmount } = body;
-
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return NextResponse.json(
-        { error: "Missing payment verification parameters" },
-        { status: 400 }
-      );
-    }
 
     const secret = process.env.RAZORPAY_KEY_SECRET;
     if (!secret) {
@@ -58,6 +77,21 @@ export async function POST(req: Request) {
     }
 
     await connectDB();
+
+    const session = await getServerSession(authOptions);
+    if (session && session.user?.email) {
+      // Logged-in user: Always use session email and ignore frontend email
+      customerDetails.email = session.user.email;
+    } else if (customerDetails.email) {
+      // Guest Checkout: Check if email already belongs to a registered account
+      const existingCustomer = await Customer.findOne({ email: customerDetails.email.toLowerCase() });
+      if (existingCustomer && (existingCustomer.password || existingCustomer.googleId)) {
+        return NextResponse.json(
+          { error: "An account with this email already exists. Please log in to continue." },
+          { status: 401 }
+        );
+      }
+    }
 
     // 1. Idempotency Check (Prevent Replay Attacks)
     const existingWorkshop = await WorkshopRegistration.findOne({ razorpayPaymentId: razorpay_payment_id });
@@ -248,6 +282,8 @@ export async function POST(req: Request) {
       }
     }
 
+    logEvent("info", "payment_verified", { orderId: internalOrderId, orderType, amount: totalAmount });
+
     const responseData: VerifyPaymentResponse = {
       success: true,
       orderId: internalOrderId,
@@ -256,9 +292,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(responseData);
   } catch (error: any) {
-    console.error("Error verifying payment:", error);
+    logEvent("error", "payment_verification_error", { error: error.message });
     return NextResponse.json(
-      { error: "Failed to verify payment", details: error.message },
+      { error: "Failed to verify payment" },
       { status: 500 }
     );
   }

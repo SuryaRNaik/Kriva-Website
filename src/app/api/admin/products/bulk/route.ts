@@ -3,6 +3,8 @@ import connectDB from "@/lib/db";
 import Product from "@/models/Product";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { bulkProductSchema } from "@/lib/validation";
+import { logEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
@@ -11,11 +13,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const { action, productIds } = await req.json();
-
-    if (!Array.isArray(productIds) || productIds.length === 0) {
-      return NextResponse.json({ success: false, error: "No products selected" }, { status: 400 });
+    const body = await req.json();
+    const result = bulkProductSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error.issues[0].message }, { status: 400 });
     }
+    
+    const { action, productIds } = result.data;
 
     await connectDB();
 
@@ -41,6 +46,7 @@ export async function POST(req: Request) {
         break;
       case "delete":
         await Product.deleteMany({ _id: { $in: productIds } });
+        logEvent("warning", "bulk_products_deleted", { productIds });
         return NextResponse.json({ success: true, message: "Products permanently deleted" });
       default:
         return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
@@ -51,8 +57,10 @@ export async function POST(req: Request) {
       { $set: updateData }
     );
 
+    logEvent("info", "bulk_products_updated", { action, productIds });
     return NextResponse.json({ success: true, message: `Bulk action '${action}' completed successfully` });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    logEvent("error", "bulk_product_action_error", { error: error.message });
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

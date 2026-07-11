@@ -4,18 +4,26 @@ import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
 import crypto from "crypto";
 import { sendEmail, getVerificationEmailHtml } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { signupSchema, sanitizeStrict } from "@/lib/validation";
+import { logEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
+  // Signup rate limiting: 3 attempts / 60 minutes
+  const rlResponse = await checkRateLimit(req, "signup", 3, 60);
+  if (rlResponse) return rlResponse;
+
   try {
-    const { name, email, password } = await req.json();
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    const body = await req.json();
+    const result = signupSchema.safeParse(body);
+    
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
     }
 
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
-    }
+    const name = sanitizeStrict(result.data.name);
+    const email = result.data.email.toLowerCase();
+    const password = result.data.password;
 
     await connectDB();
 
@@ -67,12 +75,14 @@ export async function POST(req: Request) {
       html: getVerificationEmailHtml(verifyToken),
     });
 
+    logEvent("info", "signup_success", { email });
+
     return NextResponse.json(
       { success: true, message: "Account created successfully. Please check your email to verify your account." },
       { status: 201 }
     );
   } catch (error: any) {
-    console.error("Signup error:", error);
+    logEvent("error", "signup_error", { error: error.message });
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

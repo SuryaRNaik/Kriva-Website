@@ -4,6 +4,7 @@ import Product from "@/models/Product";
 import Settings from "@/models/Settings";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { inventoryUpdateSchema } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -36,7 +37,14 @@ export async function PUT(req: Request) {
     }
 
     await connectDB();
-    const body = await req.json();
+    const rawBody = await req.json();
+    const result = inventoryUpdateSchema.safeParse(rawBody);
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error.issues[0].message }, { status: 400 });
+    }
+
+    const body = result.data;
     
     if (Array.isArray(body)) {
       // Bulk update
@@ -51,9 +59,6 @@ export async function PUT(req: Request) {
     } else {
       // Single update
       const { _id, id, stock } = body;
-      if (typeof stock !== 'number') {
-        return NextResponse.json({ success: false, error: "Invalid data" }, { status: 400 });
-      }
       
       const filter = _id ? { _id } : { id };
       const product = await Product.findOneAndUpdate(

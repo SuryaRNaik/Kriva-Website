@@ -3,14 +3,23 @@ import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
 import crypto from "crypto";
 import { sendEmail, getPasswordResetEmailHtml } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { forgotPasswordSchema } from "@/lib/validation";
+import { logEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
-  try {
-    const { email } = await req.json();
+  // Forgot password rate limiting: 3 attempts / 60 minutes
+  const rlResponse = await checkRateLimit(req, "forgot-password", 3, 60);
+  if (rlResponse) return rlResponse;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+  try {
+    const body = await req.json();
+    const result = forgotPasswordSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
     }
+    const email = result.data.email.toLowerCase();
 
     await connectDB();
     
@@ -30,11 +39,14 @@ export async function POST(req: Request) {
         subject: "Reset your Kriva Studio Password",
         html: getPasswordResetEmailHtml(resetToken),
       });
+      logEvent("info", "password_reset_requested", { userId: customer._id.toString(), email });
+    } else {
+      logEvent("warning", "password_reset_requested_unregistered_email", { email });
     }
 
     return NextResponse.json({ success: true, message: "If that email is registered, you will receive a password reset link shortly." }, { status: 200 });
-  } catch (error) {
-    console.error("Forgot password error:", error);
+  } catch (error: any) {
+    logEvent("error", "forgot_password_error", { error: error.message });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

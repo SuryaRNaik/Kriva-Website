@@ -3,17 +3,31 @@ import connectDB from "@/lib/db";
 import Order from "@/models/Order";
 import { razorpay } from "@/lib/razorpay";
 import { sendEmail, getCustomerRefundEmailHtml, getOwnerCancellationEmailHtml } from "@/lib/email";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { cancelOrderSchema, sanitizeRichText } from "@/lib/validation";
+import { logEvent } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
-    const { email, orderId, cancellationReason } = await req.json();
-
-    if (!email || !orderId || !cancellationReason) {
+    const body = await req.json();
+    const result = cancelOrderSchema.safeParse(body);
+    
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields" },
+        { success: false, error: result.error.issues[0].message },
         { status: 400 }
       );
     }
+    
+    const { orderId } = result.data;
+    const cancellationReason = sanitizeRichText(result.data.cancellationReason);
+
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+    const sessionEmail = session.user.email;
 
     await connectDB();
 
@@ -23,8 +37,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
     }
 
-    if (order.customer.email.toLowerCase() !== email.toLowerCase()) {
-      return NextResponse.json({ success: false, error: "Authentication failed" }, { status: 401 });
+    if (order.customer.email.toLowerCase() !== sessionEmail.toLowerCase()) {
+      return NextResponse.json({ success: false, error: "Authentication failed. Order does not belong to your account." }, { status: 403 });
     }
 
     // Business rules validation
@@ -49,7 +63,7 @@ export async function POST(req: Request) {
         speed: "optimum",
       });
     } catch (rzpError: any) {
-      console.error("Razorpay refund failed:", rzpError);
+      logEvent("error", "razorpay_refund_failed", { error: rzpError.message, orderId });
       return NextResponse.json(
         { success: false, error: "Payment gateway rejected the refund. Please contact support." },
         { status: 500 }
@@ -87,9 +101,11 @@ export async function POST(req: Request) {
       // We don't fail the refund if email fails
     }
 
+    logEvent("info", "refund_processed", { orderId, refundId: refund.id, userId: order.customer._id.toString() });
+
     return NextResponse.json({ success: true, order });
   } catch (error: any) {
-    console.error("Error processing refund:", error);
+    logEvent("error", "refund_processing_error", { error: error.message });
     return NextResponse.json(
       { success: false, error: "An unexpected error occurred processing the cancellation" },
       { status: 500 }

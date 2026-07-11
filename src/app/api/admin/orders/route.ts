@@ -4,6 +4,7 @@ import Order from "@/models/Order";
 import Customer from "@/models/Customer";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { updateOrderSchema, sanitizeStrict, sanitizeRichText } from "@/lib/validation";
 
 export async function GET(req: Request) {
   try {
@@ -28,6 +29,26 @@ export async function PUT(req: Request) {
     }
 
     await connectDB();
+    const rawBody = await req.json();
+    const result = updateOrderSchema.safeParse(rawBody);
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues[0].message }, { status: 400 });
+    }
+
+    const body = result.data;
+
+    // Sanitize free-text fields
+    if (body.shippingNotes) body.shippingNotes = sanitizeRichText(body.shippingNotes);
+    if (body.adminNotes) body.adminNotes = sanitizeRichText(body.adminNotes);
+    if (body.deliveryRemarks) body.deliveryRemarks = sanitizeRichText(body.deliveryRemarks);
+    if (body.courierName) body.courierName = sanitizeStrict(body.courierName);
+    if (body.trackingNumber) body.trackingNumber = sanitizeStrict(body.trackingNumber);
+    if (body.courierContact) body.courierContact = sanitizeStrict(body.courierContact);
+    if (body.pickupLocation) body.pickupLocation = sanitizeStrict(body.pickupLocation);
+    if (body.deliveredBy) body.deliveredBy = sanitizeStrict(body.deliveredBy);
+    if (body.receivedBy) body.receivedBy = sanitizeStrict(body.receivedBy);
+
     const { 
       orderId, 
       trackingStatus,
@@ -46,11 +67,7 @@ export async function PUT(req: Request) {
       deliveredBy,
       receivedBy,
       deliveryRemarks
-    } = await req.json();
-    
-    if (!orderId || !trackingStatus) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
+    } = body;
 
     const existingOrder = await Order.findOne({ orderId }).populate('customer');
     if (!existingOrder) {

@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Settings from "@/models/Settings";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { settingsSchema, sanitizeStrict } from "@/lib/validation";
 
 export async function GET() {
   try {
@@ -31,7 +32,17 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const result = settingsSchema.safeParse(rawBody);
+
+    if (!result.success) {
+      return NextResponse.json({ success: false, error: result.error.issues[0].message }, { status: 400 });
+    }
+
+    const body = result.data;
+    if (body.storeName) body.storeName = sanitizeStrict(body.storeName);
+    if (body.storeAddress) body.storeAddress = sanitizeStrict(body.storeAddress);
+
     await connectDB();
     
     let settings = await Settings.findOne();

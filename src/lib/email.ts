@@ -478,7 +478,11 @@ export const getDeliveryConfirmationHtml = (
 };
 
 export const getVerificationEmailHtml = (token: string) => {
-  const verifyUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
+  if (!baseUrl) {
+    console.error("Missing NEXT_PUBLIC_APP_URL or NEXTAUTH_URL");
+  }
+  const verifyUrl = `${baseUrl}/verify-email?token=${token}`;
   return `
     <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
       <h2 style="color: #2B2B2B; text-align: center;">Welcome to Kriva Studio!</h2>
@@ -492,7 +496,11 @@ export const getVerificationEmailHtml = (token: string) => {
 };
 
 export const getPasswordResetEmailHtml = (token: string) => {
-  const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL;
+  if (!baseUrl) {
+    console.error("Missing NEXT_PUBLIC_APP_URL or NEXTAUTH_URL");
+  }
+  const resetUrl = `${baseUrl}/reset-password?token=${token}`;
   return `
     <div style="font-family: 'Georgia', serif; color: #2B2B2B; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #E8DCC8; border-radius: 12px; background-color: #FAF8F2;">
       <h2 style="color: #2B2B2B; text-align: center;">Password Reset Request</h2>

@@ -19,12 +19,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "No file uploaded" }, { status: 400 });
     }
 
+    // 1. Validate File Size (Max 5MB)
+    const MAX_SIZE = 5 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json({ success: false, error: "File exceeds 5MB limit" }, { status: 400 });
+    }
+
+    // 2. Validate MIME type
+    const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!allowedMimeTypes.includes(file.type)) {
+      return NextResponse.json({ success: false, error: "Invalid file type. Only JPG, PNG, and WebP are allowed." }, { status: 400 });
+    }
+
+    // 3. Validate Extension
+    const originalExt = path.extname(file.name).toLowerCase();
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    if (!allowedExtensions.includes(originalExt)) {
+      return NextResponse.json({ success: false, error: "Invalid file extension." }, { status: 400 });
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Create unique filename
+    // 4. File Signature Validation (Magic Numbers check for basic image headers)
+    const hex = buffer.toString('hex', 0, 4);
+    const magicNumbers = [
+      "ffd8ffe0", "ffd8ffe1", "ffd8ffe2", "ffd8ffe3", "ffd8ffe8", // JPEG/JPG
+      "89504e47", // PNG
+      "52494646", // WEBP (RIFF header, actual WEBP check needs more bytes but this is a good start)
+    ];
+    
+    let isHeaderValid = magicNumbers.some(magic => hex.startsWith(magic));
+    // WebP specific check (bytes 8-11 should be 'WEBP')
+    if (hex === "52494646") {
+      const webpSignature = buffer.toString('ascii', 8, 12);
+      if (webpSignature !== "WEBP") isHeaderValid = false;
+    }
+
+    if (!isHeaderValid) {
+       return NextResponse.json({ success: false, error: "File content does not match image format." }, { status: 400 });
+    }
+
+    // 5. Sanitize Filename (strip paths, double dots, unsafe chars)
+    const safeBaseName = path.basename(file.name, originalExt).replace(/[^a-zA-Z0-9-]/g, "_");
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    const filename = `${uniqueSuffix}-${safeBaseName}${originalExt}`;
     
     // Ensure upload directory exists
     const uploadDir = path.join(process.cwd(), "public/uploads/products");

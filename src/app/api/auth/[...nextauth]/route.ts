@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
+import { logEvent } from "@/lib/logger";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -63,8 +64,10 @@ export const authOptions: NextAuthOptions = {
           user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
           if (user.failedLoginAttempts >= 5) {
             user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // lock for 15 mins
+            logEvent("security", "account_locked", { email: reqEmail });
           }
           await user.save();
+          logEvent("warning", "login_failed", { email: reqEmail, attempts: user.failedLoginAttempts });
           throw new Error("Invalid credentials");
         }
         
@@ -78,6 +81,12 @@ export const authOptions: NextAuthOptions = {
           user.lockUntil = undefined;
           await user.save();
         }
+
+        logEvent("info", "login_success", { 
+          userId: user._id.toString(), 
+          email: user.email, 
+          role: user.role 
+        });
 
         return {
           id: user._id.toString(),
@@ -147,8 +156,20 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days (reduced from 30)
   },
+  useSecureCookies: process.env.NODE_ENV === "production",
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+import { checkRateLimit } from "@/lib/rate-limit";
+
 const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
+
+export async function POST(req: Request, ctx: any) {
+  // Login rate limiting: 5 attempts / 15 minutes
+  const rlResponse = await checkRateLimit(req, "login", 5, 15);
+  if (rlResponse) return rlResponse;
+
+  return handler(req, ctx);
+}
+
+export { handler as GET };
