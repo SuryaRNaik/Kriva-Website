@@ -71,7 +71,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
         
-        if (process.env.NODE_ENV === 'production' && !user.emailVerified) {
+        if (process.env.NODE_ENV === 'production' && user.emailVerified === false) {
           throw new Error("Please verify your email before logging in.");
         }
         
