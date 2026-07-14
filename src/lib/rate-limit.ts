@@ -10,6 +10,53 @@ interface RateLimitInfo {
 const rateLimitStore = new Map<string, RateLimitInfo>();
 
 /**
+ * Basic rate limit check that returns a boolean.
+ */
+export function isRateLimited(
+  ip: string,
+  action: string,
+  limit: number,
+  windowMinutes: number
+): boolean {
+  const identifier = `${action}:${ip}`;
+  const now = Date.now();
+  const windowMs = windowMinutes * 60 * 1000;
+
+  let info = rateLimitStore.get(identifier);
+
+  if (!info || now > info.resetTime) {
+    info = { count: 1, resetTime: now + windowMs };
+  } else {
+    info.count++;
+  }
+
+  rateLimitStore.set(identifier, info);
+
+  if (Math.random() < 0.05) {
+    for (const [key, val] of rateLimitStore.entries()) {
+      if (now > val.resetTime) {
+        rateLimitStore.delete(key);
+      }
+    }
+  }
+
+  if (info.count > limit) {
+    if (info.count === limit + 1) {
+      logEvent("security", "rate_limit_exceeded", {
+        action,
+        ip,
+        limit,
+        windowMinutes,
+        userAgent: "unknown"
+      });
+    }
+    return true;
+  }
+  return false;
+}
+
+
+/**
  * Checks if the request should be rate limited.
  * Returns a NextResponse (HTTP 429) if rate limited, or null if allowed.
  * 

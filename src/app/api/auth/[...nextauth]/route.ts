@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import Customer from "@/models/Customer";
 import { logEvent } from "@/lib/logger";
+import { isRateLimited } from "@/lib/rate-limit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,7 +19,14 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        const headers = req?.headers || {};
+        const ip = (headers['x-forwarded-for'] || headers['x-real-ip'] || 'unknown') as string;
+        
+        if (isRateLimited(ip, "login", 5, 15)) {
+          throw new Error("Too many login attempts. Please try again later.");
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
         }
@@ -46,6 +54,18 @@ export const authOptions: NextAuthOptions = {
         // 2. Normal Auth Flow (Includes Admin after seeding)
         const user = await Customer.findOne({ email: reqEmail });
         
+        console.log("=== LOGIN DEBUG ===");
+        console.log("User found:", !!user);
+
+        if (user) {
+          console.log({
+            email: user.email,
+            emailVerified: user.emailVerified,
+            role: user.role,
+            hasPassword: !!user.password,
+          });
+        }
+
         if (!user) {
           throw new Error("No user found with this email");
         }
@@ -70,6 +90,11 @@ export const authOptions: NextAuthOptions = {
           logEvent("warning", "login_failed", { email: reqEmail, attempts: user.failedLoginAttempts });
           throw new Error("Invalid credentials");
         }
+
+        console.log("Verification check:", {
+          nodeEnv: process.env.NODE_ENV,
+          emailVerified: user.emailVerified,
+        });
         
         if (process.env.NODE_ENV === 'production' && user.emailVerified === false) {
           throw new Error("Please verify your email before logging in.");
@@ -160,16 +185,6 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-import { checkRateLimit } from "@/lib/rate-limit";
-
 const handler = NextAuth(authOptions);
 
-export async function POST(req: Request, ctx: any) {
-  // Login rate limiting: 5 attempts / 15 minutes
-  const rlResponse = await checkRateLimit(req, "login", 5, 15);
-  if (rlResponse) return rlResponse;
-
-  return handler(req, ctx);
-}
-
-export { handler as GET };
+export { handler as GET, handler as POST };
