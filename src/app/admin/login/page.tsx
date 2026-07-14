@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import toast from "react-hot-toast";
@@ -28,7 +28,8 @@ export default function AdminLoginPage() {
         toast.error("Invalid admin credentials");
       } else {
         toast.success("Welcome back, Admin!");
-        router.push("/admin");
+        // Use hard navigation to ensure cookies are fresh and middleware intercepts correctly
+        window.location.href = "/admin";
       }
     } catch (error) {
       toast.error("An error occurred during login");

@@ -7,7 +7,7 @@ import BackButton from "@/components/BackButton";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
 export default function LoginPage() {
@@ -31,7 +31,7 @@ export default function LoginPage() {
         toast.error(res.error);
       } else {
         toast.success("Successfully logged in!");
-        router.push("/");
+        window.location.href = "/";
       }
     } catch (error: any) {
       toast.error("An unexpected error occurred");

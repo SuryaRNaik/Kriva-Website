@@ -24,6 +24,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
+  console.log("=== ADMIN DASHBOARD LAYOUT ===");
+  console.log("Session:", session);
+  console.log("User:", session?.user);
+  console.log("Role:", (session?.user as any)?.role);
+
   const fetchUnreadCount = async () => {
     try {
       const res = await fetch("/api/admin/messages");
